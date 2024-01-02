@@ -1,0 +1,142 @@
+﻿<Window x:Class="BarcodeCompareSystem.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:BarcodeCompareSystem"
+        Title="Barcode Compare Sysem" Height="900" Width="1500"
+        WindowStartupLocation="CenterScreen" ShowInTaskbar="True" ResizeMode="CanResize" Visibility="Visible"
+        Closing="Window_Closing"
+        >
+    <Window.Resources>
+        <Style x:Key="_ListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Name="_Border"
+                                Padding="2"
+                                SnapsToDevicePixels="true">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="true">
+                                <Setter TargetName="_Border" Property="Background" Value="Yellow"/>
+                                <Setter Property="Foreground" Value="Red"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ListViewItem_PreviewMouseLeftButtonDown" />
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="10*"></ColumnDefinition>
+            <ColumnDefinition Width="15*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="65"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Column="0" Grid.Row="0">
+            <Grid Background="#fafafa" Grid.Column="0" Grid.Row="2" Height="65">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"></ColumnDefinition>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="232"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label  BorderBrush="Black" FontSize="15" FontWeight="Bold"  HorizontalAlignment="Center" Content="MODEL:" Width="100" Margin="0,17,0,17"/>
+                    <TextBox Grid.Column="1" BorderBrush="Black" FontSize="15" Margin="10,20,10,20" Name="txtModel" TextWrapping="Wrap" Text="Nhập Model..."/>
+                    <Button Grid.Column="2"  BorderBrush="Black" FontSize="15"  HorizontalAlignment="Left"  Click="Button_Open_Model" Content="OK"   Width="100"  OpacityMask="Black" Margin="7,17,0,17"/>
+                    <Button Grid.Column="2"  BorderBrush="Black" FontSize="15"  HorizontalAlignment="Left"  Click="Button_Reload" Content="RELOAD"   Width="100"  OpacityMask="Black" Margin="122,17,0,17" RenderTransformOrigin="1.626,0.498"/>
+                </Grid>
+
+            </Grid>
+            <Grid Grid.Column="0" Grid.Row="3">
+                <ListView  ItemContainerStyle="{DynamicResource _ListBoxItemStyle}" Name="lstLabelBrowser" HorizontalAlignment="Stretch" Margin="10,10,10,10" VerticalAlignment="Stretch"  BorderBrush="White">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock FontSize="17" Text="{Binding FileName}" OpacityMask="Black" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListView>
+            </Grid>
+        </StackPanel>
+        <Grid Background="#fafafa" Grid.Column="1" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"></RowDefinition>
+                    <RowDefinition Height="*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <GroupBox Grid.Row="0" Header="Allow edit fields">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" Grid.Row="1" Margin="10,0,20,0">
+                        <StackPanel Name="checkFieldStackPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                    </ScrollViewer>
+                </GroupBox>
+                <GroupBox Grid.Row="1" Header="Auto increase">
+                    <ScrollViewer  HorizontalScrollBarVisibility="Auto" Grid.Row="1" Margin="10,0,20,0">
+                        <StackPanel Name="unCheckFieldStackPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                    </ScrollViewer>
+                </GroupBox>
+            </Grid>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="4*"></RowDefinition>
+                    <RowDefinition Height="4*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button FontSize="15" BorderBrush="Black"   Click="Button_Open_File_Click" Content="Open BarTender" HorizontalAlignment="Right"  Width="120" Height="30" Margin="20,10,10,10"  OpacityMask="Black" />
+                        <Button FontSize="15" Name="Refresh_Button" BorderBrush="Black"  Click="Button_Refresh_Click" Content="Refresh Data" HorizontalAlignment="Right"  Width="120" Height="30"  Margin="20,10,10,10"  OpacityMask="Black" />
+                    </StackPanel>
+                </StackPanel>
+                <GroupBox Background="White"  BorderBrush="Black" Grid.Row="0" Header="Image" Margin="10,70,10,70" >
+                    <local:ZoomBorder x:Name="border" ClipToBounds="True" Background="Gray">
+                        <Image Grid.Row="0" Name="picThumbnail" Margin="0,15,0,0"  />
+                    </local:ZoomBorder>
+                </GroupBox>
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*">
+                        </RowDefinition>
+                        <RowDefinition Height="*">
+                        </RowDefinition>
+                        <RowDefinition Height="*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Label Content="Printers: " HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="16"  RenderTransformOrigin="1.053,1.423" Margin="10,10,0,0" FontWeight="Bold"/>
+                        <ComboBox  Name="ComboBoxPrintersList" Background="#ffff" FontSize="20" FontWeight="Bold" ItemsSource="{Binding Path=Printers}" Margin="20,10,30,0" HorizontalAlignment="Stretch" Height="42" BorderBrush="White" Foreground="Black" OpacityMask="Black" />
+                    </Grid>
+                    <!--<Grid Grid.Row="1">
+                        <Label Content="Start Number: " HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="16"  RenderTransformOrigin="1.053,1.423" Margin="10,10,0,0" FontWeight="Bold"/>
+                        <TextBox  BorderBrush="Black" Name="SerializedLabels" Text="1" FontSize="25" FontWeight="Bold" Background="#ffff" Margin="20,10,30,0" HorizontalAlignment="Stretch" Height="42"  />
+                    </Grid>-->
+                    <Grid Grid.Row="1">
+                        <Label Content="Number Label: " HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="16"  RenderTransformOrigin="1.053,1.423" Margin="10,10,0,0" FontWeight="Bold"/>
+                        <TextBox  BorderBrush="Black" Name="CopiesOfLabel" Text="1" Background="#ffff" FontSize="25" FontWeight="Bold" Margin="20,10,30,0" HorizontalAlignment="Stretch" Height="42" />
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+        <Grid Background="#fafafa" Grid.Column="0" Grid.Row="2">
+        </Grid>
+        <Grid Background="#fafafa" Grid.Column="1" Grid.Row="3">
+            <Button FontSize="15" BorderBrush="Black" Click="Button_Sample_Print" Content="Print Sample" HorizontalAlignment="Left"  Width="100" Height="30" Margin="423,17,0,18"  OpacityMask="Black" />
+            <Button FontSize="15" BorderBrush="Black" Click="Button_Re_Print_Click" Content="Re-Print" HorizontalAlignment="Left"  Width="100" Height="30" Margin="546,17,0,18"  OpacityMask="Black" />
+            <Button FontSize="15"  BorderBrush="Black" Content="Print" Click="Button_Print_Click" HorizontalAlignment="Left"  Width="100" Height="30" Margin="670,18,0,17" OpacityMask="Black" />
+        </Grid>
+
+    </Grid>
+</Window>
