@@ -22,5 +22,30 @@ namespace BarcodeCompareSystem.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
+        public int Count {
+            get {
+                return ((int)(this["Count"]));
+            }
+            set {
+                this["Count"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool FlagCheck {
+            get {
+                return ((bool)(this["FlagCheck"]));
+            }
+            set {
+                this["FlagCheck"] = value;
+            }
+        }
     }
 }

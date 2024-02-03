@@ -53,9 +53,9 @@
                 </Grid>
 
             </Grid>
-            <Grid Grid.Column="0" Grid.Row="3">
-                <ListView  ItemContainerStyle="{DynamicResource _ListBoxItemStyle}" Name="lstLabelBrowser" HorizontalAlignment="Stretch" Margin="10,10,10,10" VerticalAlignment="Stretch"  BorderBrush="White">
-                    <ListBox.ItemTemplate>
+            <Grid Height="594">
+                <ListView  ItemContainerStyle="{DynamicResource _ListBoxItemStyle}" x:Name="lstLabelBrowser" Margin="10,10,10,-10"  BorderBrush="White">
+                    <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,2">
                                 <Grid.ColumnDefinitions>
@@ -65,7 +65,7 @@
                                 <TextBlock FontSize="17" Text="{Binding FileName}" OpacityMask="Black" />
                             </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
+                    </ListView.ItemTemplate>
                 </ListView>
             </Grid>
         </StackPanel>
@@ -79,12 +79,12 @@
                     <RowDefinition Height="*"></RowDefinition>
                     <RowDefinition Height="*"></RowDefinition>
                 </Grid.RowDefinitions>
-                <GroupBox Grid.Row="0" Header="Allow edit fields">
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto" Grid.Row="1" Margin="10,0,20,0">
+                <GroupBox Grid.Row="0" Header="Allow edit fields" Margin="0,0,0,205">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" Grid.Row="1" Margin="10,0,20,0" Height="197">
                         <StackPanel Name="checkFieldStackPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
                     </ScrollViewer>
                 </GroupBox>
-                <GroupBox Grid.Row="1" Header="Auto increase">
+                <GroupBox Header="Auto increase" Margin="0,222,0,0" Grid.RowSpan="2">
                     <ScrollViewer  HorizontalScrollBarVisibility="Auto" Grid.Row="1" Margin="10,0,20,0">
                         <StackPanel Name="unCheckFieldStackPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
                     </ScrollViewer>
@@ -98,7 +98,7 @@
                 </Grid.RowDefinitions>
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button FontSize="15" BorderBrush="Black"   Click="Button_Open_File_Click" Content="Open BarTender" HorizontalAlignment="Right"  Width="120" Height="30" Margin="20,10,10,10"  OpacityMask="Black" />
+                        <Button FontSize="15" BorderBrush="Black"   Click="Button_Open_File_Click" Content="Open BarTender" HorizontalAlignment="Right"  Width="120" Height="30" Margin="20,10,10,10"  OpacityMask="Black" IsEnabled="False" />
                         <Button FontSize="15" Name="Refresh_Button" BorderBrush="Black"  Click="Button_Refresh_Click" Content="Refresh Data" HorizontalAlignment="Right"  Width="120" Height="30"  Margin="20,10,10,10"  OpacityMask="Black" />
                     </StackPanel>
                 </StackPanel>
@@ -136,6 +136,7 @@
             <Button FontSize="15" BorderBrush="Black" Click="Button_Sample_Print" Content="Print Sample" HorizontalAlignment="Left"  Width="100" Height="30" Margin="423,17,0,18"  OpacityMask="Black" />
             <Button FontSize="15" BorderBrush="Black" Click="Button_Re_Print_Click" Content="Re-Print" HorizontalAlignment="Left"  Width="100" Height="30" Margin="546,17,0,18"  OpacityMask="Black" />
             <Button FontSize="15"  BorderBrush="Black" Content="Print" Click="Button_Print_Click" HorizontalAlignment="Left"  Width="100" Height="30" Margin="670,18,0,17" OpacityMask="Black" />
+            <Button FontSize="15" BorderBrush="Black" Click="Button_Eventory_Print" Content="Print Inventory" HorizontalAlignment="Left"  Width="100" Height="30" Margin="290,18,0,17"  OpacityMask="Black" />
         </Grid>
 
     </Grid>

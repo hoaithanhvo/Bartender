@@ -19,7 +19,25 @@ namespace BarcodeCompareSystem
     /// </summary>
     public partial class App : Application
     {
+        private DispatcherTimer dailyTimer;
 
+
+
+        private void DailyTimer_Tick(object sender, EventArgs e)
+        {
+            DateTime currentTime = DateTime.Now;
+
+            // Kiểm tra nếu là 7 giờ sáng và chưa kiểm tra trong ngày nay
+            
+                // Tìm cửa sổ MainWindow hiện tại trong ứng dụng
+                MainWindow mainWindow = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault();
+
+                if (mainWindow != null)
+                {
+                    mainWindow.LoadFilePath(); // Gọi lại hàm LoadFilePath
+                }
+            
+        }
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger("Log4Net");
 
         protected override void OnStartup(StartupEventArgs e)
@@ -27,6 +45,8 @@ namespace BarcodeCompareSystem
             log4net.Config.XmlConfigurator.Configure();
             base.OnStartup(e);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+
+           
         }
 
         void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

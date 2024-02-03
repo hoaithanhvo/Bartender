@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace BarcodeCompareSystem
 {
     /// <summary>
-    /// Interaction logic for LoginForm.xaml
+    /// Interaction logic for PrintInventory.xaml
     /// </summary>
-    public partial class LoginForm : Window
+    public partial class PrintInventory : Window
     {
-        public LoginForm()
+        public PrintInventory()
         {
             InitializeComponent();
             CenterWindowOnScreen();
@@ -34,11 +34,13 @@ namespace BarcodeCompareSystem
             this.Left = (screenWidth - this.Width) / 2;
             this.Top = (screenHeight - this.Height) / 2;
         }
-        private void btnReprint_Click(object sender, RoutedEventArgs e) {
+        private void btnInventoryPrint_Click(object sender, RoutedEventArgs e)
+        {
             this.DialogResult = true;
         }
 
-        private void btnCancel_Click(object sender, RoutedEventArgs e) {
+        private void btnCancel_Click(object sender, RoutedEventArgs e)
+        {
             this.DialogResult = false;
             this.Close();
         }

@@ -22,6 +22,17 @@ namespace BarcodeCompareSystem
         public RePrint()
         {
             InitializeComponent();
+            CenterWindowOnScreen();
+        }
+        public void CenterWindowOnScreen()
+        {
+            // Lấy độ rộng và chiều cao của màn hình
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+            double screenHeight = SystemParameters.PrimaryScreenHeight;
+
+            // Đặt vị trí của cửa sổ ở chính giữa màn hình
+            this.Left = (screenWidth - this.Width) / 2;
+            this.Top = (screenHeight - this.Height) / 2;
         }
 
         private void btnReprint_Click(object sender, RoutedEventArgs e) {
