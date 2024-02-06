@@ -29,6 +29,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 using System.Globalization;
 using System.Windows.Threading;
 using System.Drawing;
+using System.Data.SqlClient;
 
 namespace BarcodeCompareSystem
 {
@@ -966,7 +967,7 @@ namespace BarcodeCompareSystem
                             }
                             DBAgent db_ = DBAgent.Instance;
                             int numberlabel = int.Parse(CopiesOfLabel.Text);
-                            string query_bartender_history = "INSERT INTO M_BARTENDER_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label)";
+                            string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL, STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
                             Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
                                             { "@filename", Path.GetFileName(this._basePath) },
                                             { "@date", dayYearPart },
@@ -976,9 +977,8 @@ namespace BarcodeCompareSystem
                                             { "@end_serial", txtSerialInsert==""?txtSerialUpdate: txtSerialInsert},
                                             { "@create_date", DateTime.Now },
                                             { "@create_by", Department },
-                                            { "@number_label", numberlabel }
-
-
+                                            { "@number_label", numberlabel },
+                                            { "@status", "NORMAL-PRINT" },
                                         };
                             db_.Execute(query_bartender_history, parameters_bartender_history);
 
@@ -1148,7 +1148,7 @@ namespace BarcodeCompareSystem
                                         db.Execute(query, parameters);
                                         DBAgent db_ = DBAgent.Instance;
                                         int numberlabel = int.Parse(CopiesOfLabel.Text);
-                                        string query_bartender_history = "INSERT INTO M_BARTENDER_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label)";
+                                        string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL,STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
                                         Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
                                             { "@filename", Path.GetFileName(this._basePath) },
                                             { "@date", formatDateNow() },
@@ -1158,8 +1158,10 @@ namespace BarcodeCompareSystem
                                             { "@end_serial", txtSerialUpdate},
                                             { "@create_date", DateTime.Now },
                                             { "@create_by", Department },
-                                            { "@number_label", numberLabel
-                                            } };
+                                            { "@number_label", numberLabel },
+                                            { "@status", "RE_PRINT" },
+
+                                        };
 
                                         db_.Execute(query_bartender_history, parameters_bartender_history);
                                     }
@@ -1518,7 +1520,7 @@ namespace BarcodeCompareSystem
 
         private void Button_Eventory_Print(object sender, RoutedEventArgs e)
         {
-            PrintInventory rePrint = new PrintInventory();
+            PrintInventory PrintInventory = new PrintInventory();
             DateTime currentDateTime = DateTime.Now;
             
             // Kiểm tra nếu thời gian hiện tại nằm trong khoảng từ 19h ngày hôm trước đến 7h ngày hôm sau
@@ -1529,7 +1531,8 @@ namespace BarcodeCompareSystem
             }
             dayYearPart = formatDateNow_();
             DBAgent dbBoxNumber = DBAgent.Instance;
-            rePrint.txtDateCode.Text = dayYearPart;
+            PrintInventory.txtDateCode.Text = dayYearPart;
+           
             DataTable dtBoxNumber = dbBoxNumber.GetData(
                                 "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
                                 new Dictionary<string, object> {
@@ -1539,26 +1542,47 @@ namespace BarcodeCompareSystem
                                 }
                              );
 
-            rePrint.txtStartNumber.Text = (dtBoxNumber != null && dtBoxNumber.Rows.Count > 0)
+            PrintInventory.txtStartNumber.Text = (dtBoxNumber != null && dtBoxNumber.Rows.Count > 0)
              ? dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim()
              : "00001";
             bool flagUpdate = false;
             flagUpdate = (dtBoxNumber != null && dtBoxNumber.Rows.Count > 0) ? false : true;
-            if (rePrint.ShowDialog() == true)
+            if (PrintInventory.ShowDialog() == true)
             {
-                string startNumber = rePrint.txtStartNumber.Text;
-                string dateCodeRePrint = rePrint.txtDateCode.Text;
-                string txtLotNo = rePrint.txtLotNoInventory.Text;
-                string txtNumberLabel = rePrint.txtNumberLabel.Text;
-                
+                string startNumber = PrintInventory.txtStartNumber.Text;
+                string dateCodePrintInventory = PrintInventory.txtDateCode.Text;
+                string txtLotNo = PrintInventory.txtLotNoInventory.Text;
+                string txtNumberLabel = PrintInventory.txtNumberLabel.Text;
+                DBAgent dbNumberLabel = DBAgent.Instance;
+                DataTable dtNumberLabel = dbNumberLabel.GetData(
+                    "SELECT SUM(NUMBER_LABEL) AS TotalNumberLabel FROM M_BAR_HISTORY WHERE STATUS = @PRINT_INVENTORY and LOT_NO = @LOT_NO",
+                    new Dictionary<string, object> {
+                        { "@PRINT_INVENTORY", "PRINT_INVENTORY" },
+                        { "@LOT_NO",  txtLotNo},
+
+                    }
+                );
+
+                if (dtNumberLabel != null && dtNumberLabel.Rows.Count > 0)
+                {
+                    string numberSerial = dtNumberLabel.Rows[0]["TotalNumberLabel"].ToString().Trim();
+
+                    int tong  = int.Parse(numberSerial)+ int.Parse(txtNumberLabel);
+                    if(tong>1000)
+                    {
+
+                        System.Windows.Forms.MessageBox.Show($"Số lượng nhãn còn lại có thể in tồn là: {1000- int.Parse(numberSerial)}! Vui lòng nhập lại", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                }
                 string txtSerialStartUpdate = "";
                 string txtSerialUpdate="";
                 string txtSerialInsert = "";
-                if (rePrint.DialogResult == true)
+                if (PrintInventory.DialogResult == true)
                 {
                     try
                     {
-                        int numberLabel = Int16.Parse(rePrint.txtNumberLabel.Text);
+                        int numberLabel = Int16.Parse(PrintInventory.txtNumberLabel.Text);
                         
                         DateTime currentTime = DateTime.Now;
 
@@ -1647,8 +1671,8 @@ namespace BarcodeCompareSystem
                                             }
                                             if (field.Name.Contains("txt_Datecode"))
                                             {
-                                                txtDatecode = dateCodeRePrint;
-                                                field.BtwValue = dateCodeRePrint;
+                                                txtDatecode = dateCodePrintInventory;
+                                                field.BtwValue = dateCodePrintInventory;
                                                 this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                             }
                                         }
@@ -1870,18 +1894,20 @@ namespace BarcodeCompareSystem
                                     }
                                     DBAgent db_ = DBAgent.Instance;
                                     int numberlabel = int.Parse(CopiesOfLabel.Text);
-                                    string query_bartender_history = "INSERT INTO M_BARTENDER_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label)";
+                                    string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL,STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
                                     Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
                                             { "@filename", Path.GetFileName(this._basePath) },
-                                            { "@date", dayYearPart },
+                                            { "@date", formatDateNow() },
                                             { "@lot_no", txtLot },
                                             { "@google_number", GoogleNumber  },
                                             { "@str_serial", startNumber },
-                                            { "@end_serial", txtSerialInsert==""?txtSerialUpdate: txtSerialInsert},
+                                            { "@end_serial", txtSerialUpdate},
                                             { "@create_date", DateTime.Now },
                                             { "@create_by", Department },
-                                            { "@number_label", txtNumberLabel }
+                                            { "@number_label", numberLabel },
+                                            { "@status", "INVENTORY_PRINT" },
                                         };
+
                                     db_.Execute(query_bartender_history, parameters_bartender_history);
                                     PrintJob printJob = new PrintJob();
                                     printJob.Serializiers = numberLabel;
