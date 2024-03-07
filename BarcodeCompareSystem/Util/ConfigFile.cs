@@ -1,23 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows;
 using BarcodeCompareSystem.Model;
 using System.Data;
 using System.Windows.Forms;
 using log4net.Util;
 using System.Data.Entity.Core.Common.CommandTrees.ExpressionBuilder;
 using System.Globalization;
+using System.Linq;
 
 namespace BarcodeCompareSystem.Util
 {
     class ConfigFile
     {
         public static int start1;
-        public static List<Barcode> GetFields(string fileName)
+        public static List<Barcode> GetFields(string fileName,string [] ModelYear2NumberArray)
         {
             List<Barcode> sections = new List<Barcode>();
             try
             {
-                string a = "";
+                string fileNameCheck = fileName.Substring(0, fileName.Length - 4); ;
                 //sql
                 DBAgent db = DBAgent.Instance;
                 DataTable dt = new DataTable();
@@ -29,7 +31,15 @@ namespace BarcodeCompareSystem.Util
                 {
                     TimeNow = TimeNow.AddDays(-1);
                 }
-                int lastDigitOfYear = TimeNow.Year % 10;
+                int lastDigitOfYear;
+                if (ModelYear2NumberArray.Contains(fileNameCheck))
+                {
+                    lastDigitOfYear = TimeNow.Year % 100;
+                }
+                else
+                {
+                    lastDigitOfYear = TimeNow.Year % 10;
+                }
 
                 string monthCode;
                 if (TimeNow.Month == 10)
@@ -50,6 +60,7 @@ namespace BarcodeCompareSystem.Util
                 }
                 string dayYearPart = $"{lastDigitOfYear}{monthCode}{TimeNow.Day:D2}";
                 string result = dayYearPart;
+                
 
                 //dt = db.GetData("Select TOP(1)* from M_BARTENDER where FILENAME=@nme;", new Dictionary<string, object> { { "@nme", fileName } });
                 string query = @"

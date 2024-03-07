@@ -57,6 +57,8 @@ namespace BarcodeCompareSystem
         private string pathGetFile;
         const string CONFIG_FILE = "config.ini";
         string Department;
+        public string[] ModelYear2NumberArray;
+        public string a;
         string serial_sequence;
         public string dateRessult;
         public IList<string> Printers
@@ -69,8 +71,8 @@ namespace BarcodeCompareSystem
             }
         }
         //thanh cmt main
-        
-        
+
+
         public DateTime time;
         private DispatcherTimer timer;
         private void Timer_Tick(object sender, EventArgs e)
@@ -122,6 +124,10 @@ namespace BarcodeCompareSystem
                 IniData data = parser.ReadFile(directory + "\\" + CONFIG_FILE);
                 pathGetFile = data["Database"]["Path"];
                 Department = data["Database"]["Department"];
+                string ModelYear2Number = data["Database"]["ModelYear2Number"];
+
+                // Chia chuỗi thành mảng
+                ModelYear2NumberArray = ModelYear2Number.Split(',');
 
                 this.listItems.Clear();
                 this.txtModel.Text = "";
@@ -134,7 +140,7 @@ namespace BarcodeCompareSystem
                     Properties.Settings.Default.Save();
                 }
                 DBAgent db1 = DBAgent.Instance;
-                
+
 
                 // Assuming GetData returns a DataTable with a single row and single column
                 DataTable resultTable = db1.GetData("SELECT GETDATE();");
@@ -174,7 +180,7 @@ namespace BarcodeCompareSystem
 
                 DataTable dt = new DataTable();
                 dt = db.GetData("Select * from M_BARTENDER where PRODUCT_NO=@nme;", new Dictionary<string, object> { { "@nme", Model } });
-                
+
                 if (dt != null && dt.Rows.Count > 0)
                 {
 
@@ -269,9 +275,17 @@ namespace BarcodeCompareSystem
             if (DateTime.TryParseExact(date, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
             {
                 // Kiểm tra và điều chỉnh ngày nếu cần thiết
-                
-                int lastDigitOfYear = parsedDate.Year % 10;
 
+               
+                int lastDigitOfYear;
+                if (ModelYear2NumberArray.Contains(a))
+                {
+                    lastDigitOfYear = parsedDate.Year % 100;
+                }
+                else
+                {
+                    lastDigitOfYear = parsedDate.Year % 10;
+                }
                 string monthCode;
                 if (parsedDate.Month == 10)
                 {
@@ -299,41 +313,59 @@ namespace BarcodeCompareSystem
                 return "Invalid Date";
             }
         }
+        
         public string formatDateNow()
         {
-                DateTime TimeNow = DateTime.Now;
-                if (TimeNow.Hour < ConfigFile.start1)
-                {
-                    TimeNow = TimeNow.AddDays(-1);
-                }
-                int lastDigitOfYear = TimeNow.Year % 10;
+            DateTime TimeNow = DateTime.Now;
+            
+            if (TimeNow.Hour < ConfigFile.start1)
+            {
+                TimeNow = TimeNow.AddDays(-1);
+            }
+            int lastDigitOfYear;
+            if (ModelYear2NumberArray.Contains(a))
+            {
+                lastDigitOfYear = TimeNow.Year % 100;
+            }
+            else
+            {
+                lastDigitOfYear = TimeNow.Year % 10;
+            }
 
-                string monthCode;
-                if (TimeNow.Month == 10)
-                {
-                    monthCode = "X";
-                }
-                else if (TimeNow.Month == 11)
-                {
-                    monthCode = "Y";
-                }
-                else if (TimeNow.Month == 12)
-                {
-                    monthCode = "Z";
-                }
-                else
-                {
-                    monthCode = TimeNow.Month.ToString();
-                }
+            string monthCode;
+            if (TimeNow.Month == 10)
+            {
+                monthCode = "X";
+            }
+            else if (TimeNow.Month == 11)
+            {
+                monthCode = "Y";
+            }
+            else if (TimeNow.Month == 12)
+            {
+                monthCode = "Z";
+            }
+            else
+            {
+                monthCode = TimeNow.Month.ToString();
+            }
 
-                string dayYearPart = $"{lastDigitOfYear}{monthCode}{TimeNow.Day:D2}";
-                return dayYearPart;
-           
+            string dayYearPart = $"{lastDigitOfYear}{monthCode}{TimeNow.Day:D2}";
+            return dayYearPart;
+
         }
         public string formatDateNow_()
         {
             DateTime TimeNow = DateTime.Now;
-            int lastDigitOfYear = TimeNow.Year % 10;
+            int lastDigitOfYear;
+            if (ModelYear2NumberArray.Contains(a))
+            {
+                lastDigitOfYear = TimeNow.Year % 100;
+            }
+            else
+            {
+                lastDigitOfYear = TimeNow.Year % 10;
+            }
 
             string monthCode;
             if (TimeNow.Month == 10)
@@ -366,12 +398,13 @@ namespace BarcodeCompareSystem
                 this._bartenderEngine.OpenFormat(this._basePath);
                 this._btwData = new BtwData();
                 this._btwData.FileName = Path.GetFileName(this._basePath);
+                a = this._btwData.FileName.Substring(0, this._btwData.FileName.Length - 4);
                 this._btwData.Path = this._basePath;
                 //thanh98 add load data sql
-                List<Barcode> barcodesIni = ConfigFile.GetFields(this._btwData.FileName);
+                List<Barcode> barcodesIni = ConfigFile.GetFields(this._btwData.FileName, ModelYear2NumberArray);
                 BarcodeField barcodeFields;
-                
-                
+
+
                 foreach (Barcode barcode in barcodesIni)
                 {
                     barcodeFields = new BarcodeField();
@@ -400,16 +433,16 @@ namespace BarcodeCompareSystem
                             //thanh add
                             DateTime TimeNow = DateTime.Now;
                             shift_cd = (TimeNow.Hour < 7 || TimeNow.Hour >= 19) ? "CA3" : "CA1";
-                            
+
                             string result = formatDateNow() + " " + shift_cd;
 
                             TemplateField field = new TemplateField();
                             string value = this._bartenderEngine.ReadValue(fieldName);
                             field.Name = fieldName;
                             field.BtwValue = fieldName == "txt_Datecode" ? result : value;
-                            
+
                             GoogleNumber = fieldName == "txt_GoogleNumber" ? result : GoogleNumber;
-                            if (fieldName== "txt_GoogleNumber")
+                            if (fieldName == "txt_GoogleNumber")
                             {
                                 string value1 = this._bartenderEngine.ReadValue(fieldName);
                                 GoogleNumber = value1;
@@ -605,7 +638,9 @@ namespace BarcodeCompareSystem
             char[] hangNghin = serial_sequence.Trim().ToCharArray();
             char[] hangTram = serial_sequence.Trim().ToCharArray();
             char[] hangChuc = serial_sequence.Trim().ToCharArray();
-            char[] hangDonVi = serial_sequence.Substring(1).Trim().ToCharArray();
+           //char[] hangDonVi = serial_sequence.Substring(1).Trim().ToCharArray();
+            char[] hangDonVi = serial_sequence.Trim().ToCharArray();
+
 
             bool checkCompare = false;
             int count = 0;
@@ -694,6 +729,13 @@ namespace BarcodeCompareSystem
         //thanh add cmt chuc nang IN (false), In lại (true)
         public void Print()
         {
+            //string configFilePath = "config.txt";
+
+            //// Đọc nội dung của file
+            //string[] lines = File.ReadAllLines(configFilePath);
+
+            //// Tìm dòng chứa mảng
+            //string arrayLine = lines.FirstOrDefault(line => line.StartsWith("MyArray"));
             if (this._basePath != null)
             {
                 try
@@ -724,7 +766,7 @@ namespace BarcodeCompareSystem
                     var txtBoxLot = (System.Windows.Controls.TextBox)this.FindName("_name_" + "txt_Lot");
                     var txtGoogleNumber = (System.Windows.Controls.TextBox)this.FindName("_name_" + "txt_GoogleNumber");
                     var txt_Serial = (System.Windows.Controls.TextBox)this.FindName("_name_" + "txt_Serial");
-
+                    var txt_Production = (System.Windows.Controls.TextBox)this.FindName("_name_" + "txt_Product");
 
                     if (CheckProduction(Path.GetFileName(this._basePath), txtBoxLot.Text))
                     {
@@ -738,8 +780,11 @@ namespace BarcodeCompareSystem
                             //thanh lay so serial tu M_BarTender
                             DBAgent dbBoxNumber = DBAgent.Instance;
                             
-
+                             a = txt_Production.Text;
+                            
                             dayYearPart = formatDateNow();
+                           
+                            
                             DataTable dtBoxNumber = dbBoxNumber.GetData(
                                 "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
                                 new Dictionary<string, object> {
@@ -890,7 +935,7 @@ namespace BarcodeCompareSystem
                                                 txtSerialStartInsert = dtserialSample.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
                                                 if (txtSerialStartInsert.Count() == 5)
                                                     //txtSerialInsert = txtBox.Text;
-                                                    txtSerialInsert = CV60E(txtSerialStartInsert, int.Parse(CopiesOfLabel.Text) - 1);
+                                                    txtSerialInsert = CV60E(txtSerialStartInsert, int.Parse(CopiesOfLabel.Text)-1);
                                                 else
                                                 {
                                                     txtSerialInsert = V12E(txtSerialStartInsert, int.Parse(CopiesOfLabel.Text) - 1);
@@ -958,7 +1003,7 @@ namespace BarcodeCompareSystem
 
                                         };
                                     db.Execute(query, parameters);
-                                    
+
                                 }
                                 catch
                                 {
@@ -1060,7 +1105,7 @@ namespace BarcodeCompareSystem
                                 var txtGoogleNumber = (System.Windows.Controls.TextBox)this.FindName("_name_" + "txt_GoogleNumber");
                                 var txt_Serial = (System.Windows.Controls.TextBox)this.FindName("_name_" + "txt_Serial");
                                 DBAgent dbserialSample = DBAgent.Instance;
-                                string txtSerialStartInsert="";
+                                string txtSerialStartInsert = "";
                                 DataTable dtserialSample = dbserialSample.GetData(
                                     "Select TOP(1) * from T_LOT_PRODUCT where LOT_NO = @lot_no",
                                     new Dictionary<string, object> {
@@ -1069,11 +1114,11 @@ namespace BarcodeCompareSystem
                                  );
                                 if (dtserialSample != null && dtserialSample.Rows.Count > 0)
                                 {
-                                     txtSerialStartInsert = dtserialSample.Rows[0]["PRODUCT_DAY"].ToString().Trim();
+                                    txtSerialStartInsert = dtserialSample.Rows[0]["PRODUCT_DAY"].ToString().Trim();
                                 }
 
-                                    //thanh add check Model và Lot có ở T_LOT_PRODUCT
-                                    if (CheckProductionRePrint(Path.GetFileName(this._basePath), lotNoRePrint))
+                                //thanh add check Model và Lot có ở T_LOT_PRODUCT
+                                if (CheckProductionRePrint(Path.GetFileName(this._basePath), lotNoRePrint))
                                 {
                                     // lay thong tin tren man hinh
                                     foreach (BarcodeField barcodeField in this._btwData.Barcodes)
@@ -1136,7 +1181,7 @@ namespace BarcodeCompareSystem
                                         Dictionary<string, object> parameters = new Dictionary<string, object> {
                                                     { "@filename", Path.GetFileName(this._basePath) },
                                                     { "@lotno", txtLot },
-                                                    { "@date", formatDateNow() },
+                                                    { "@date", formatDate(txtSerialStartInsert) },
                                                     { "@box_number", startNumber },
                                                     { "@flag_print", '1' },
                                                     { "@number_reprint", numberLabel },
@@ -1151,7 +1196,7 @@ namespace BarcodeCompareSystem
                                         string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL,STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
                                         Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
                                             { "@filename", Path.GetFileName(this._basePath) },
-                                            { "@date", formatDateNow() },
+                                            { "@date", formatDate(txtSerialStartInsert) },
                                             { "@lot_no", txtLot },
                                             { "@google_number", GoogleNumber  },
                                             { "@str_serial", startNumber },
@@ -1522,17 +1567,22 @@ namespace BarcodeCompareSystem
         {
             PrintInventory PrintInventory = new PrintInventory();
             DateTime currentDateTime = DateTime.Now;
-            
+
             // Kiểm tra nếu thời gian hiện tại nằm trong khoảng từ 19h ngày hôm trước đến 7h ngày hôm sau
-            if (currentDateTime.Hour>=7 || currentDateTime.Hour< 5)
+            if ( currentDateTime.Hour <=2 || currentDateTime.Hour >= 7)
             {
                 System.Windows.Forms.MessageBox.Show("Chưa đến thời gian cho phép in tồn!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+            //if (currentDateTime.Hour < 3 || currentDateTime.Hour > 7)
+            //{
+            //    System.Windows.Forms.MessageBox.Show("Chưa đến thời gian cho phép in tồn!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            //    return;
+            //}
             dayYearPart = formatDateNow_();
             DBAgent dbBoxNumber = DBAgent.Instance;
             PrintInventory.txtDateCode.Text = dayYearPart;
-           
+
             DataTable dtBoxNumber = dbBoxNumber.GetData(
                                 "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
                                 new Dictionary<string, object> {
@@ -1555,44 +1605,45 @@ namespace BarcodeCompareSystem
                 string txtNumberLabel = PrintInventory.txtNumberLabel.Text;
                 DBAgent dbNumberLabel = DBAgent.Instance;
                 DataTable dtNumberLabel = dbNumberLabel.GetData(
-                    "SELECT SUM(NUMBER_LABEL) AS TotalNumberLabel FROM M_BAR_HISTORY WHERE STATUS = @PRINT_INVENTORY and LOT_NO = @LOT_NO",
+                    "SELECT SUM(NUMBER_LABEL) AS TotalNumberLabel FROM M_BAR_HISTORY WHERE STATUS = @INVENTORY_PRINT and LOT_NO = @LOT_NO",
                     new Dictionary<string, object> {
-                        { "@PRINT_INVENTORY", "PRINT_INVENTORY" },
+                        { "@INVENTORY_PRINT", "INVENTORY_PRINT" },
                         { "@LOT_NO",  txtLotNo},
-
                     }
                 );
 
                 if (dtNumberLabel != null && dtNumberLabel.Rows.Count > 0)
                 {
                     string numberSerial = dtNumberLabel.Rows[0]["TotalNumberLabel"].ToString().Trim();
-
-                    int tong  = int.Parse(numberSerial)+ int.Parse(txtNumberLabel);
-                    if(tong>1000)
+                    if (numberSerial != "")
                     {
+                        int tong = int.Parse(numberSerial) + int.Parse(txtNumberLabel);
+                        if (tong > 1000)
+                        {
+                            System.Windows.Forms.MessageBox.Show($"Số lượng nhãn còn lại có thể in tồn là: {1000 - int.Parse(numberSerial)}! Vui lòng nhập lại", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
 
-                        System.Windows.Forms.MessageBox.Show($"Số lượng nhãn còn lại có thể in tồn là: {1000- int.Parse(numberSerial)}! Vui lòng nhập lại", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        return;
                     }
                 }
                 string txtSerialStartUpdate = "";
-                string txtSerialUpdate="";
+                string txtSerialUpdate = "";
                 string txtSerialInsert = "";
                 if (PrintInventory.DialogResult == true)
                 {
                     try
                     {
                         int numberLabel = Int16.Parse(PrintInventory.txtNumberLabel.Text);
-                        
+
                         DateTime currentTime = DateTime.Now;
 
                         // Nếu là 4 giờ sáng, reset giá trị Count
-                        
-                        
-                        if(Properties.Settings.Default.FlagCheck == true)
+
+
+                        if (Properties.Settings.Default.FlagCheck == true)
                         {
                             Properties.Settings.Default.FlagCheck = false;
-                            Properties.Settings.Default.Count =0;
+                            Properties.Settings.Default.Count = 0;
                             Properties.Settings.Default.Save();
                         }
                         Properties.Settings.Default.Count += numberLabel;
@@ -1602,12 +1653,7 @@ namespace BarcodeCompareSystem
                             System.Windows.Forms.MessageBox.Show("Nhập vượt quá số lượng cần in tồn!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             return;
                         }
-                        if (Properties.Settings.Default.Count >= 1001)
-                        {
-                            Properties.Settings.Default.Count -= numberLabel;
-                            System.Windows.Forms.MessageBox.Show("Số lượng cần in tồn đang vượt quá 1000 nhãn! Vui lòng nhập lại", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            return;
-                        }
+                        
 
                         //thuc hien chuc nang in lai 
                         if (this._basePath != null)
@@ -1731,7 +1777,6 @@ namespace BarcodeCompareSystem
                                             //gia tri serial tu dong tang
                                             foreach (TemplateField field in barcodeField.UncheckFields)
                                             {
-
                                                 var txtBox = (System.Windows.Controls.TextBox)this.FindName("_name_" + field.Name);
                                                 //thanh add txtProduct
                                                 if (field.Name.Contains("txt_Product"))
@@ -1820,7 +1865,7 @@ namespace BarcodeCompareSystem
                                                         string txtSerialStartInsert = dtserialSample.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
                                                         if (txtSerialStartInsert.Count() == 5)
                                                             //txtSerialInsert = txtBox.Text;
-                                                            txtSerialInsert = CV60E(txtSerialStartInsert, int.Parse(txtNumberLabel) - 1);
+                                                            txtSerialInsert = CV60E(txtSerialStartInsert, int.Parse(txtNumberLabel)-1);
                                                         else
                                                         {
                                                             txtSerialInsert = V12E(txtSerialStartInsert, int.Parse(txtNumberLabel) - 1);
@@ -1897,11 +1942,11 @@ namespace BarcodeCompareSystem
                                     string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL,STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
                                     Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
                                             { "@filename", Path.GetFileName(this._basePath) },
-                                            { "@date", formatDateNow() },
+                                            { "@date", dayYearPart },
                                             { "@lot_no", txtLot },
                                             { "@google_number", GoogleNumber  },
                                             { "@str_serial", startNumber },
-                                            { "@end_serial", txtSerialUpdate},
+                                            { "@end_serial", CV60E(startNumber, int.Parse(txtNumberLabel))},
                                             { "@create_date", DateTime.Now },
                                             { "@create_by", Department },
                                             { "@number_label", numberLabel },

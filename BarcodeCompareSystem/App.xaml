@@ -4,5 +4,7 @@
              xmlns:local="clr-namespace:BarcodeCompareSystem"
              StartupUri="MainWindow.xaml"
              >
-
+    <Application.Resources>
+        <BitmapImage x:Key="AppIcon" UriSource="/YourNamespace;component/YourIcon.png"/>
+    </Application.Resources>
 </Application>
