@@ -14,7 +14,7 @@ namespace BarcodeCompareSystem.Util
     class ConfigFile
     {
         public static int start1;
-        public static List<Barcode> GetFields(string fileName,string [] ModelYear2NumberArray)
+        public static List<Barcode> GetFields(string fileName,string [] ModelYear2NumberArray,string dayYearPart)
         {
             List<Barcode> sections = new List<Barcode>();
             try
@@ -24,45 +24,6 @@ namespace BarcodeCompareSystem.Util
                 DBAgent db = DBAgent.Instance;
                 DataTable dt = new DataTable();
                 DataTable dt1 = new DataTable();
-                //thanh98 lay datecode
-                DateTime TimeNow = DateTime.Now;
-                string shift_cd = (TimeNow.Hour < 7 || TimeNow.Hour >= 17) ? "CA3" : "CA1";
-                if (TimeNow.Hour < 7)
-                {
-                    TimeNow = TimeNow.AddDays(-1);
-                }
-                int lastDigitOfYear;
-                if (ModelYear2NumberArray.Contains(fileNameCheck))
-                {
-                    lastDigitOfYear = TimeNow.Year % 100;
-                }
-                else
-                {
-                    lastDigitOfYear = TimeNow.Year % 10;
-                }
-
-                string monthCode;
-                if (TimeNow.Month == 10)
-                {
-                    monthCode = "X";
-                }
-                else if (TimeNow.Month == 11)
-                {
-                    monthCode = "Y";
-                }
-                else if (TimeNow.Month == 12)
-                {
-                    monthCode = "Z";
-                }
-                else
-                {
-                    monthCode = TimeNow.Month.ToString();
-                }
-                string dayYearPart = $"{lastDigitOfYear}{monthCode}{TimeNow.Day:D2}";
-                string result = dayYearPart;
-                
-
-                //dt = db.GetData("Select TOP(1)* from M_BARTENDER where FILENAME=@nme;", new Dictionary<string, object> { { "@nme", fileName } });
                 string query = @"
                     SELECT *
                     FROM M_BARTENDER AS A
@@ -71,28 +32,9 @@ namespace BarcodeCompareSystem.Util
 
                 Dictionary<string, object> parameters = new Dictionary<string, object> {
                     { "@nme", fileName },
-                    { "@result", result },
+                    { "@result", dayYearPart },
                 };
                 dt = db.GetData(query, parameters);
-                //string query1 = @"
-                //    SELECT *
-                //    FROM M_BARTENDER_PRINT
-                //    WHERE FILE_NAME = @nme AND  DATE_CODE = @result AND SHIFT_CD = @shift_cd";
-
-                //Dictionary<string, object> parameters1 = new Dictionary<string, object> {
-                //    { "@nme", fileName },
-                //    { "@result", result },
-                //    { "@shift_cd", shift_cd }
-                //};
-
-                //dt1 = db.GetData(query1, parameters1);
-
-                // dt1 = db.GetData(countQuery, parameters1);
-                //int rowCount = dt1.Rows.Count > 0 ? Convert.ToInt32(dt1.Rows[0][0]) : 0;
-                //if(dt1 != null && dt1.Rows.Count > 0)
-                //{
-                //   a = dt1.Rows[0]["ID"].ToString().Trim();
-                //}
                 if (dt != null && dt.Rows.Count > 0)
                 {
                     string fields = dt.Rows[0]["ALLOW_EDIT"].ToString().Trim();
@@ -118,16 +60,13 @@ namespace BarcodeCompareSystem.Util
                         string DATE = result1.Rows[0]["START1"].ToString().Trim();
                         DateTime start = DateTime.ParseExact(DATE, "HH:mm:ss", CultureInfo.InvariantCulture);
                         start1 = start.Hour;
-                        // Sử dụng giá trị DATE tại đây
                     }
-                    //thanh lay serial de tang tu dong
                     if (numberSerial != "")
                     {
                         numberSerial = dt.Rows[0]["SERIAL_NUMBER"].ToString().Trim();
                     }
                     else
                     {
-                        //numberSerial = dt.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
                         numberSerial = dt.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
 
                     }

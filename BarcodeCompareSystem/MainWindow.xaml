@@ -5,6 +5,7 @@
         Title="Barcode Compare Sysem" Height="900" Width="1500"
         WindowStartupLocation="CenterScreen" ShowInTaskbar="True" ResizeMode="CanResize" Visibility="Visible"
         Closing="Window_Closing"
+        Icon="/favicon.ico"
         >
     <Window.Resources>
         <Style x:Key="_ListBoxItemStyle" TargetType="ListBoxItem">
