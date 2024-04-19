@@ -1449,18 +1449,17 @@ namespace BarcodeCompareSystem
                 DBAgent dbProduct = DBAgent.Instance;
                 DataTable dtProduct = new DataTable();
                 DateTime CheckProductionInventory = DateTime.Now;
-                string a = CheckProductionInventory.ToString("yyyyMMdd");
+                string product_date_Inventory = CheckProductionInventory.ToString("yyyyMMdd");
                 string query = @"
                     SELECT A.PRODUCT_NO
                     FROM T_LOT_PRODUCT AS A
                     INNER JOIN M_BARTENDER AS B ON A.PRODUCT_NO = B.PRODUCT_NO
-                    WHERE B.FILENAME = @filename AND A.LOT_NO = @lotno AND SHIFT_CD =@shift_cd AND PRODUCT_DAY = @checkdate ";
+                    WHERE B.FILENAME = @filename AND A.LOT_NO = @lotno AND SHIFT_CD =@shift_cd AND PRODUCT_END_DT >= @checkdate ";
                 Dictionary<string, object> parameters = new Dictionary<string, object> {
                     { "@filename", filename },
                     { "@lotno", lotno },
                     { "@shift_cd", "CA1" },
-                    { "@checkdate",a  }
-
+                    { "@checkdate",CheckProductionInventory  }
                 };
 
                 dtProduct = dbProduct.GetData(query, parameters);
