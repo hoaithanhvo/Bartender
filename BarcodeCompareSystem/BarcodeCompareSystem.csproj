@@ -155,8 +155,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Check_LotNo.xaml.cs">
+      <DependentUpon>Check_LotNo.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PrintInventory.xaml.cs">
       <DependentUpon>PrintInventory.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Print_Inventory_Holiday.xaml.cs">
+      <DependentUpon>Print_Inventory_Holiday.xaml</DependentUpon>
     </Compile>
     <Compile Include="RePrint.xaml.cs">
       <DependentUpon>RePrint.xaml</DependentUpon>
@@ -180,7 +186,15 @@
     <Compile Include="Util\ThreadManage\PrintJobQueue.cs" />
     <Compile Include="Util\ThreadManage\SizeQueue.cs" />
     <Compile Include="ViewModel\EngineWapper.cs" />
+    <Page Include="Check_LotNo.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PrintInventory.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Print_Inventory_Holiday.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

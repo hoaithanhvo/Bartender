@@ -81,5 +81,6 @@ namespace BarcodeCompareSystem
             // Người dùng không tồn tại trong cơ sở dữ liệu
             return 0;
         }
+
     }
 }

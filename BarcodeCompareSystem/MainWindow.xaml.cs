@@ -30,6 +30,7 @@ using System.Globalization;
 using System.Windows.Threading;
 using System.Drawing;
 using System.Data.SqlClient;
+using System.Security.AccessControl;
 
 namespace BarcodeCompareSystem
 {
@@ -270,9 +271,9 @@ namespace BarcodeCompareSystem
 
             }
         }
-        public string formatDate4serial()
+        public string formatDate4serial(DateTime dateRaw)
         {
-            DateTime dateTime = DateTime.Now;
+            DateTime dateTime = dateRaw;
             if (dateTime.Hour < 7 && isBCalled == false)
             {
                 dateTime = dateTime.AddDays(-1);
@@ -404,9 +405,9 @@ namespace BarcodeCompareSystem
             return dayYearPart;
 
         }
-        public string formatDateToInventory()
+        public string formatDateToInventory(DateTime dateRaw)
         {
-            DateTime TimeNow = DateTime.Now;
+            DateTime TimeNow = dateRaw;
             int lastDigitOfYear;
             if (ModelYear2NumberArray.Contains(checkNumberSerialConfig))
             {
@@ -462,11 +463,11 @@ namespace BarcodeCompareSystem
                 isBCalled = shift_cd == "CA3" ? false : true;
                 this._btwData.Path = this._basePath;
                 int a = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length;
-                dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateNow() : formatDate4serial();
+                dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateNow() : formatDate4serial(DateTime.Now);
                 //thanh98 add load data sql
                 List<Barcode> barcodesIni = ConfigFile.GetFields(this._btwData.FileName, ModelYear2NumberArray, dayYearPart);
                 BarcodeField barcodeFields;
-                string dayYearPartScreen = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateNow() + " | " + shift_cd : formatDate4serial() + " | " + shift_cd;
+                string dayYearPartScreen = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateNow() + " | " + shift_cd : formatDate4serial(DateTime.Now) + " | " + shift_cd;
 
 
                 foreach (Barcode barcode in barcodesIni)
@@ -830,7 +831,7 @@ namespace BarcodeCompareSystem
 
                             //a = txt_Production.Text;
                             isBCalled = false;
-                            dayYearPart = txt_Serial.Text.Length == 5 ? formatDateNow() : formatDate4serial();
+                            dayYearPart = txt_Serial.Text.Length == 5 ? formatDateNow() : formatDate4serial(DateTime.Now);
 
                             DataTable dtBoxNumber = dbBoxNumber.GetData(
                                 "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
@@ -1418,12 +1419,12 @@ namespace BarcodeCompareSystem
                     SELECT A.PRODUCT_NO
                     FROM T_LOT_PRODUCT AS A
                     INNER JOIN M_BARTENDER AS B ON A.PRODUCT_NO = B.PRODUCT_NO
-                    WHERE B.FILENAME = @filename AND A.LOT_NO = @lotno AND @dateTimeRePrint>= A.PRODUCT_STR_DT";
+                    WHERE B.FILENAME = @filename AND A.LOT_NO = @lotno";
 
                 Dictionary<string, object> parameters = new Dictionary<string, object> {
                     { "@filename", filename },
                     { "@lotno", lotno },
-                    { "@dateTimeRePrint", dateTimeRePrint }
+                   // { "@dateTimeRePrint", dateTimeRePrint }
                 };
 
                 dtProduct = dbProduct.GetData(query, parameters);
@@ -1687,7 +1688,7 @@ namespace BarcodeCompareSystem
                                }
                             );
 
-            dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToRePrint(dateRePrint) : formatDate4serial();
+            dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToRePrint(dateRePrint) : formatDate4serial(DateTime.Now);
 
             return dayYearPart;
         }
@@ -1721,7 +1722,7 @@ namespace BarcodeCompareSystem
                                }
                             );
 
-            dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToInventory() : formatDate4serial();
+            dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToInventory(DateTime.Now) : formatDate4serial(DateTime.Now);
 
             DataTable dtBoxNumber = dbBoxNumber.GetData(
                                 "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
@@ -1796,8 +1797,6 @@ namespace BarcodeCompareSystem
                             System.Windows.Forms.MessageBox.Show("Nhập vượt quá số lượng cần in tồn!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             return;
                         }
-
-
                         //thuc hien chuc nang in lai 
                         if (this._basePath != null)
                         {
@@ -2153,6 +2152,452 @@ namespace BarcodeCompareSystem
                 }
             }
 
+        }
+
+
+        private string CheckLotNo(string LotNo, string ProductNo)
+        {
+            try
+            {
+                DBAgent db = DBAgent.Instance;
+                object CheckLotNo = db.GetValue("SELECT PRODUCT_DAY FROM T_LOT_PRODUCT WHERE LOT_NO = @LotNo AND PRODUCT_NO = @Product_No ",
+                                        new Dictionary<string, object> { { "@LotNo", LotNo }, { "@Product_No", ProductNo } });
+                string respone = CheckLotNo.ToString();
+                return respone;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
+        private void Button_Inventory_Holiday_Click(object sender, RoutedEventArgs e)
+        {
+            Check_LotNo check_LotNo = new Check_LotNo();
+            DBAgent dbBoxNumberStart1 = DBAgent.Instance;
+            DataTable dtBoxNumberStart1 = dbBoxNumberStart1.GetData(
+                               "Select TOP(1) * from M_BARTENDER where FILENAME = @file_name",
+                               new Dictionary<string, object> {
+                                    { "@file_name", Path.GetFileName(this._basePath) }
+                               }
+                            );
+
+            check_LotNo.txtCheckProductNo.Text = dtBoxNumberStart1.Rows[0]["PRODUCT_NO"].ToString().Trim();
+            if (check_LotNo.ShowDialog() == true)
+            {
+                if (check_LotNo.DialogResult == true)
+                {
+                    string getProduct_Day = CheckLotNo(check_LotNo.txtCheckLotNo.Text, check_LotNo.txtCheckProductNo.Text);
+                    if (getProduct_Day == null)
+                    {
+                        System.Windows.Forms.MessageBox.Show("LotNo và ProductNo không khớp vui lòng nhập lại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                    Print_Inventory_Holiday print_Inventory_Holiday = new Print_Inventory_Holiday();
+                    var directory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                    var parser = new FileIniDataParser();
+                    IniData data = parser.ReadFile(directory + "\\" + CONFIG_FILE);
+                    string startTime = data["Database"]["StartTimeInventory"];
+                    string endTime = data["Database"]["EndTimeInventory"];
+                    isBCalled = true;
+                    DBAgent dbBoxNumber = DBAgent.Instance;
+                    DBAgent dbBoxNumberStart = DBAgent.Instance;
+                    DataTable dtBoxNumberStart = dbBoxNumberStart.GetData(
+                                       "Select TOP(1) * from M_BARTENDER where FILENAME = @file_name",
+                                       new Dictionary<string, object> {
+                                    { "@file_name", Path.GetFileName(this._basePath) }
+                                       }
+                                    );
+
+                    DateTime parsedDate;
+                    DateTime.TryParseExact(getProduct_Day, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate);
+                    DateTime checkDateInventory = DateTime.Now.AddDays(1);
+                    if (parsedDate <= checkDateInventory)
+                    {
+                        System.Windows.Forms.MessageBox.Show("LotNo nằm ngoài thời gian in tồn!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                    dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToInventory(parsedDate) : formatDate4serial(parsedDate);
+                    DataTable dtBoxNumber = dbBoxNumber.GetData(
+                                        "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
+                                        new Dictionary<string, object> {
+                                    { "@file_name", Path.GetFileName(this._basePath) },
+                                    {"@date",dayYearPart },
+                                    { "@flag_reprint", '0' },
+                                        }
+                                     );
+                    print_Inventory_Holiday.txtStartNumber.Text = (dtBoxNumber != null && dtBoxNumber.Rows.Count > 0)
+                     ? dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim()
+                     : dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
+
+                    print_Inventory_Holiday.txtDateCode.Text = dayYearPart;
+                    print_Inventory_Holiday.txtLotNoInventory.Text = check_LotNo.txtCheckLotNo.Text;
+
+                    bool flagUpdate = false;
+                    flagUpdate = (dtBoxNumber != null && dtBoxNumber.Rows.Count > 0) ? false : true;
+                    if (print_Inventory_Holiday.ShowDialog() == true)
+                    {
+                        string startNumber = print_Inventory_Holiday.txtStartNumber.Text;
+                        string dateCodePrintInventory = print_Inventory_Holiday.txtDateCode.Text;
+                        string txtLotNo = print_Inventory_Holiday.txtLotNoInventory.Text;
+                        string txtNumberLabel = print_Inventory_Holiday.txtNumberLabel.Text;
+                        DBAgent dbNumberLabel = DBAgent.Instance;
+                        DataTable dtNumberLabel = dbNumberLabel.GetData(
+                            "SELECT SUM(NUMBER_LABEL) AS TotalNumberLabel FROM M_BAR_HISTORY WHERE STATUS = @INVENTORY_PRINT and LOT_NO = @LOT_NO",
+                            new Dictionary<string, object> {
+                        { "@INVENTORY_PRINT", "INVENTORY_PRINT" },
+                        { "@LOT_NO",  txtLotNo},
+                            }
+                        );
+
+                        if (dtNumberLabel != null && dtNumberLabel.Rows.Count > 0)
+                        {
+                            string numberSerial = dtNumberLabel.Rows[0]["TotalNumberLabel"].ToString().Trim();
+                            if (numberSerial != "")
+                            {
+                                int tong = int.Parse(numberSerial) + int.Parse(txtNumberLabel);
+                                if (tong > 1000)
+                                {
+                                    System.Windows.Forms.MessageBox.Show($"Số lượng nhãn còn lại có thể in tồn là: {1000 - int.Parse(numberSerial)}! Vui lòng nhập lại", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    return;
+                                }
+                            }
+                        }
+                        string txtSerialStartUpdate = "";
+                        string txtSerialUpdate = "";
+                        string txtSerialInsert = "";
+                        if (print_Inventory_Holiday.DialogResult == true)
+                        {
+                            try
+                            {
+                                int numberLabel = Int16.Parse(print_Inventory_Holiday.txtNumberLabel.Text);
+
+                                DateTime currentTime = DateTime.Now;
+                                if (Properties.Settings.Default.FlagCheck == true)
+                                {
+                                    Properties.Settings.Default.FlagCheck = false;
+                                    Properties.Settings.Default.Count = 0;
+                                    Properties.Settings.Default.Save();
+                                }
+                                Properties.Settings.Default.Count += numberLabel;
+                                Properties.Settings.Default.Save();
+                                if (numberLabel >= 1001)
+                                {
+                                    System.Windows.Forms.MessageBox.Show("Nhập vượt quá số lượng cần in tồn!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    return;
+                                }
+                                if (this._basePath != null)
+                                {
+                                    try
+                                    {
+                                        this._bartenderEngine.OpenFormat(this._basePath);
+                                        string txtLot = "";
+                                        string txtProduct = "";
+                                        string txtDatecode = "";
+                                        string txtSerial = "";
+                                        if (this.ComboBoxPrintersList.Text == "" || this.ComboBoxPrintersList.Text == null)
+                                        {
+                                            System.Windows.Forms.MessageBox.Show("Vui lòng chọn máy in!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        }
+
+                                        var txtBoxLot = (System.Windows.Controls.TextBox)this.FindName("_name_" + "txt_Lot");
+
+                                        if (CheckProductionInventory(Path.GetFileName(this._basePath), txtLotNo))
+                                        {
+                                            foreach (BarcodeField barcodeField in this._btwData.Barcodes)
+                                            {
+                                                foreach (TemplateField field in barcodeField.Fields)
+                                                {
+                                                    var txtBox = (System.Windows.Controls.TextBox)this.FindName("_name_" + field.Name);
+                                                    if (field.Name.Contains("txt_Lot"))
+                                                    {
+                                                        txtLot = txtLotNo;
+                                                        field.BtwValue = txtLot;
+                                                        this._bartenderEngine.SetValue(field.Name, txtLot);
+                                                    }
+                                                }
+                                                foreach (TemplateField field in barcodeField.UncheckFields)
+                                                {
+                                                    var txtBox = (System.Windows.Controls.TextBox)this.FindName("_name_" + field.Name);
+                                                    if (field.Name.Contains("txt_Serial"))
+                                                    {
+                                                        txtSerial = startNumber.ToString();
+                                                        field.BtwValue = "13";
+                                                        this._bartenderEngine.SetValue(field.Name, txtSerial);
+                                                    }
+                                                    if (field.Name.Contains("txt_Product"))
+                                                    {
+                                                        txtProduct = txtBox.Text;
+                                                        field.BtwValue = txtProduct;
+                                                        this._bartenderEngine.SetValue(field.Name, txtProduct);
+                                                    }
+                                                    if (field.Name.Contains("txt_Datecode"))
+                                                    {
+                                                        txtDatecode = dateCodePrintInventory;
+                                                        field.BtwValue = dateCodePrintInventory;
+                                                        this._bartenderEngine.SetValue(field.Name, txtDatecode);
+                                                    }
+                                                }
+                                            }
+
+                                            if (dtBoxNumber != null && dtBoxNumber.Rows.Count > 0)
+                                            {
+                                                DBAgent dbserialSample = DBAgent.Instance;
+                                                DataTable dtserialSample = dbserialSample.GetData(
+                                                    "Select TOP(1) * from M_BARTENDER where FILENAME = @file_name",
+                                                    new Dictionary<string, object> {
+                                                 { "@file_name", Path.GetFileName(this._basePath) }
+                                                    }
+                                                 );
+                                                string txtSerialStartInsert = dtserialSample.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
+                                                if (txtSerialStartInsert.Count() == 5)
+                                                {
+                                                    txtSerialStartUpdate = CV60E(dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim(), 1);
+                                                    txtSerialUpdate = CV60E(dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim(), int.Parse(txtNumberLabel));
+                                                }
+                                                if (txtSerialStartInsert.Count() == 4)
+                                                {
+                                                    txtSerialStartUpdate = V80E(dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim(), 1);
+                                                    txtSerialUpdate = V80E(dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim(), int.Parse(txtNumberLabel));
+                                                }
+                                                if (txtSerialStartInsert.Count() == 3)
+                                                {
+                                                    txtSerialStartUpdate = V12E(dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim(), 1);
+                                                    txtSerialUpdate = V12E(dtBoxNumber.Rows[0]["SERIAL_NUMBER"].ToString().Trim(), int.Parse(txtNumberLabel));
+                                                }
+
+                                                foreach (BarcodeField barcodeField in this._btwData.Barcodes)
+                                                {
+                                                    foreach (TemplateField field in barcodeField.Fields)
+                                                    {
+                                                        var txtBox = (System.Windows.Controls.TextBox)this.FindName("_name_" + field.Name);
+                                                        if (field.Name.Contains("txt_Lot"))
+                                                        {
+                                                            txtLot = txtLotNo;
+                                                            field.BtwValue = txtLot;
+                                                            this._bartenderEngine.SetValue(field.Name, txtLot);
+                                                        }
+
+                                                        if (field.Name.Contains("txt_Datecode"))
+                                                        {
+                                                            txtDatecode = txtBox.Text;
+                                                            field.BtwValue = txtDatecode;
+                                                            this._bartenderEngine.SetValue(field.Name, txtDatecode);
+                                                        }
+                                                    }
+                                                    foreach (TemplateField field in barcodeField.UncheckFields)
+                                                    {
+                                                        var txtBox = (System.Windows.Controls.TextBox)this.FindName("_name_" + field.Name);
+                                                        if (field.Name.Contains("txt_Product"))
+                                                        {
+                                                            txtProduct = txtBox.Text;
+                                                            field.BtwValue = txtProduct;
+                                                            this._bartenderEngine.SetValue(field.Name, txtProduct);
+                                                        }
+                                                        if (field.Name.Contains("txt_Serial"))
+                                                        {
+                                                            field.BtwValue = txtSerialStartUpdate;
+                                                            this._bartenderEngine.SetValue(field.Name, txtSerialStartUpdate);
+                                                        }
+                                                        if (field.Name.Contains("txt_Datecode"))
+                                                        {
+                                                            txtDatecode = dayYearPart;
+                                                            field.BtwValue = txtDatecode;
+                                                            this._bartenderEngine.SetValue(field.Name, txtDatecode);
+                                                        }
+                                                    }
+                                                }
+                                                flagUpdate = true;
+                                            }
+                                            else
+                                            {
+                                                DBAgent dbserialSample = DBAgent.Instance;
+                                                DataTable dtserialSample = dbserialSample.GetData(
+                                                    "Select TOP(1) * from M_BARTENDER where FILENAME = @file_name",
+                                                    new Dictionary<string, object> {
+                                        { "@file_name", Path.GetFileName(this._basePath) }
+                                                    }
+                                                 );
+                                                if (dtserialSample != null && dtserialSample.Rows.Count > 0)
+                                                {
+                                                    foreach (BarcodeField barcodeField in this._btwData.Barcodes)
+                                                    {
+                                                        foreach (TemplateField field in barcodeField.Fields)
+                                                        {
+                                                            var txtBox = (System.Windows.Controls.TextBox)this.FindName("_name_" + field.Name);
+                                                            if (field.Name.Contains("txt_Lot"))
+                                                            {
+                                                                txtLot = txtLotNo;
+                                                                field.BtwValue = txtLot;
+                                                                this._bartenderEngine.SetValue(field.Name, txtLot);
+                                                            }
+
+                                                            if (field.Name.Contains("txt_Datecode"))
+                                                            {
+                                                                txtDatecode = txtBox.Text;
+                                                                field.BtwValue = txtDatecode;
+                                                                this._bartenderEngine.SetValue(field.Name, txtDatecode);
+                                                            }
+                                                        }
+                                                        foreach (TemplateField field in barcodeField.UncheckFields)
+                                                        {
+                                                            var txtBox = (System.Windows.Controls.TextBox)this.FindName("_name_" + field.Name);
+                                                            if (field.Name.Contains("txt_Product"))
+                                                            {
+                                                                txtProduct = txtBox.Text;
+                                                                field.BtwValue = txtProduct;
+                                                                this._bartenderEngine.SetValue(field.Name, txtProduct);
+                                                            }
+                                                            if (field.Name.Contains("txt_Datecode"))
+                                                            {
+                                                                txtDatecode = dayYearPart;
+                                                                field.BtwValue = txtDatecode;
+                                                                this._bartenderEngine.SetValue(field.Name, txtDatecode);
+                                                            }
+                                                            if (field.Name.Contains("txt_Serial"))
+                                                            {
+                                                                string txtSerialStartInsert = dtserialSample.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
+                                                                if (txtSerialStartInsert.Count() == 5)
+                                                                    txtSerialInsert = CV60E(txtSerialStartInsert, int.Parse(txtNumberLabel) - 1);
+
+                                                                else if (txtSerialStartInsert.Count() == 3)
+                                                                {
+                                                                    txtSerialInsert = V12E(txtSerialStartInsert, int.Parse(txtNumberLabel) - 1);
+                                                                }
+                                                                else
+                                                                {
+                                                                    txtSerialInsert = V80E(txtSerialStartInsert, int.Parse(txtNumberLabel) - 1);
+
+                                                                }
+                                                                field.BtwValue = txtSerialStartInsert;
+                                                                this._bartenderEngine.SetValue(field.Name, txtSerialStartInsert);
+                                                            }
+                                                        }
+                                                    }
+                                                    flagUpdate = false;
+                                                }
+                                                else
+                                                {
+                                                    System.Windows.Forms.MessageBox.Show("Không có dữ liệu về Lot.\nXem lại kế hoạch sản xuất!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                            }
+                                            if (flagUpdate == true)
+                                            {
+                                                try
+                                                {
+                                                    DBAgent db = DBAgent.Instance;
+                                                    string query = "UPDATE M_BARTENDER_PRINT SET SERIAL_NUMBER = @SERIAL_NUMBER, UPDATE_DATE = @update_date, UPDATE_BY = @update_by WHERE FILE_NAME = @filename AND DATE_CODE = @lot_no AND FLAG_REPRINT = @flag_print";
+                                                    Dictionary<string, object> parameters = new Dictionary<string, object> {
+                                            { "@SERIAL_NUMBER", txtSerialUpdate },
+                                            { "@update_date", DateTime.Now },
+                                            { "@update_by", Department },
+                                            { "@filename", Path.GetFileName(this._basePath) },
+                                            { "@lot_no", dayYearPart },
+                                            { "@flag_print", '0' },
+                                        };
+
+                                                    db.Execute(query, parameters);
+                                                }
+                                                catch
+                                                {
+                                                    System.Windows.Forms.MessageBox.Show("Không thể cập nhật dữ liệu!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                try
+                                                {
+                                                    int box_number = int.Parse(CopiesOfLabel.Text);
+                                                    DBAgent db = DBAgent.Instance;
+                                                    string query = "INSERT INTO M_BARTENDER_PRINT (FILE_NAME, DATE_CODE, SERIAL_NUMBER, FLAG_REPRINT,NUMBER_REPRINT, CREATE_DATE,UPDATE_DATE, CREATE_BY, UPDATE_BY) VALUES (@filename, @date, @box_number, @flag_print,@number_reprint, @create_date,@update_date, @create_by,@update_by)";
+                                                    Dictionary<string, object> parameters = new Dictionary<string, object> {
+                                            { "@filename", Path.GetFileName(this._basePath) },
+                                            { "@date", dayYearPart },
+                                            { "@box_number", txtSerialInsert },
+                                            { "@flag_print", '0' },
+                                            { "@number_reprint", DBNull.Value },
+                                            { "@create_date", DateTime.Now },
+                                            { "@update_date",DBNull.Value },
+                                            { "@create_by", Department },
+                                            { "@update_by", DBNull.Value }
+
+                                        };
+                                                    db.Execute(query, parameters);
+                                                }
+                                                catch
+                                                {
+                                                    System.Windows.Forms.MessageBox.Show("Không thể thêm dữ liệu mới!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                            }
+                                            DBAgent db_ = DBAgent.Instance;
+                                            int numberlabel = int.Parse(CopiesOfLabel.Text);
+                                            string resultNotNull = null;
+
+                                            if (!string.IsNullOrEmpty(txtSerialUpdate))
+                                            {
+                                                resultNotNull = txtSerialUpdate;
+                                            }
+                                            else if (!string.IsNullOrEmpty(txtSerialInsert))
+                                            {
+                                                resultNotNull = txtSerialInsert;
+                                            }
+
+
+                                            string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL,STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
+                                            Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
+                                            { "@filename", Path.GetFileName(this._basePath) },
+                                            { "@date", dayYearPart },
+                                            { "@lot_no", txtLot },
+                                            { "@google_number", GoogleNumber == null?"": GoogleNumber},
+                                            { "@str_serial", startNumber },
+                                            { "@end_serial", resultNotNull},
+                                            { "@create_date", DateTime.Now },
+                                            { "@create_by", Department },
+                                            { "@number_label", numberLabel },
+                                            { "@status", "INVENTORY_HOLIDAY" },
+                                        };
+
+                                            db_.Execute(query_bartender_history, parameters_bartender_history);
+                                            PrintJob printJob = new PrintJob();
+                                            printJob.Serializiers = numberLabel;
+                                            printJob.CopiesOfLabel = 1;
+                                            printJob.Path = this._basePath;
+                                            printJob.Printer = this.ComboBoxPrintersList.Text;
+                                            Seagull.BarTender.Print.Result result = this._bartenderEngine.Print(printJob);
+                                            if (result == Seagull.BarTender.Print.Result.Success)
+                                            {
+                                                System.Windows.Forms.MessageBox.Show("In thành công!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                            }
+                                            else
+                                            {
+                                                System.Windows.Forms.MessageBox.Show("In thất bại!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                            }
+                                        }
+
+                                        else
+                                        {
+                                            System.Windows.Forms.MessageBox.Show("Không có dữ liệu về Product. Xem lại kế hoạch sản xuất!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Windows.Forms.MessageBox.Show("Có lỗi xảy ra!" + ex, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    }
+                                }
+                                else
+                                {
+                                    System.Windows.Forms.MessageBox.Show("Vui lòng chọn file!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                            }
+                            catch
+                            {
+                                System.Windows.MessageBox.Show("Vui lòng nhập kiểu số!");
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     class FileBox

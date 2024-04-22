@@ -1,0 +1,21 @@
+﻿<Window x:Class="BarcodeCompareSystem.Check_LotNo"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BarcodeCompareSystem"
+        mc:Ignorable="d"
+        Title="Check_LotNo" Height="300" Width="300">
+    <Grid>
+        <StackPanel Margin="20,20,20,24">
+            <Label Content="Product No" Foreground="Black"/>
+            <TextBox x:Name="txtCheckProductNo" Background="White" Foreground="Black" FontSize="14" AcceptsReturn="True"/>
+            <Label Content="Lot No" Foreground="Black"/>
+            <TextBox x:Name="txtCheckLotNo" Background="White" Foreground="Black" FontSize="14" AcceptsReturn="True"/>
+            <StackPanel Orientation="Horizontal" Width="192">
+                <Button x:Name="btnCheckLotNo" Content="Check"  Width="89" Margin="10" Click="btnCheckLotNo_Click"/>
+                <Button x:Name="btnCancelCheckLotNo" Content="Cancel" Width="60" Margin="10" Click="btnCancelCheckLotNo_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

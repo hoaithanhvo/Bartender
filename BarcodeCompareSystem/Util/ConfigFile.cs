@@ -33,7 +33,7 @@ namespace BarcodeCompareSystem.Util
                 Dictionary<string, object> parameters = new Dictionary<string, object> {
                     { "@nme", fileName },
                     { "@result", dayYearPart },
-                };
+                };  
                 dt = db.GetData(query, parameters);
                 if (dt != null && dt.Rows.Count > 0)
                 {
