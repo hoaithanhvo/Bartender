@@ -1706,7 +1706,7 @@ namespace BarcodeCompareSystem
             int endTimeInventory = int.Parse(endTime);
 
             // Kiểm tra nếu thời gian hiện tại nằm trong khoảng từ 19h ngày hôm trước đến 7h ngày hôm sau
-            if (currentDateTime.Hour <= 1 || currentDateTime.Hour >= 7)
+            if (currentDateTime.Hour <= 2 || currentDateTime.Hour >= 7)
             {
                 System.Windows.Forms.MessageBox.Show("Chưa đến thời gian cho phép in tồn!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
@@ -2213,11 +2213,11 @@ namespace BarcodeCompareSystem
                     DateTime parsedDate;
                     DateTime.TryParseExact(getProduct_Day, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate);
                     DateTime checkDateInventory = DateTime.Now.AddDays(1);
-                    if (parsedDate <= checkDateInventory)
-                    {
-                        System.Windows.Forms.MessageBox.Show("LotNo nằm ngoài thời gian in tồn!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        return;
-                    }
+                    //if (parsedDate <= checkDateInventory)
+                    //{
+                    //    System.Windows.Forms.MessageBox.Show("LotNo nằm ngoài thời gian in tồn!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    //    return;
+                    //}
                     dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToInventory(parsedDate) : formatDate4serial(parsedDate);
                     DataTable dtBoxNumber = dbBoxNumber.GetData(
                                         "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
