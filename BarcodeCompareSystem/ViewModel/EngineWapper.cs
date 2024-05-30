@@ -113,7 +113,8 @@ namespace BarcodeCompareSystem.ViewModel
         public Result PrintFormat()
         {
             Messages messages = null;
-            return this._btFormat.Print("PrintJob1", out messages);
+            Result result = this._btFormat.Print("PrintJob1", out messages);
+            return result;
         }
 
         // Setup print parameter 

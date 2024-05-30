@@ -50,12 +50,10 @@ namespace BarcodeCompareSystem
         private PrintJob _printJob = new PrintJob();
         private BtwData _btwData;
         private PrintJobQueue printJobQueue;
-        private string[] browsingFormats; // The list of filenames in the current folder
-        //private string BARCODE_NAME = "txt_Serial";
+        private string[] browsingFormats;
         private string SERVER_NOT_VALID = "Serial is not valid!";
         private string ZERO = "0";
         private string configPath;
-        //thanh add path get file
         private string pathGetFile;
         const string CONFIG_FILE = "config.ini";
         string Department;
@@ -64,6 +62,13 @@ namespace BarcodeCompareSystem
         string serial_sequence;
         public string dateRessult;
         static bool isBCalled = false;
+        private string checkFileName;
+        private string weekOfYear;
+        public string txt_Datecode4Number;
+        public string txt_Datecode3Number;
+        public string dayYearPart;
+        public string shift_cd;
+        public string GoogleNumber;
         public IList<string> Printers
         {
             get { return _printers; }
@@ -73,8 +78,6 @@ namespace BarcodeCompareSystem
                 OnPropertyChanged("Printers");
             }
         }
-        //thanh cmt main
-
 
         public DateTime time;
         private DispatcherTimer timer;
@@ -82,6 +85,7 @@ namespace BarcodeCompareSystem
         {
             // Hàm sẽ được gọi lại sau mỗi giờ
             this.Refresh_Form();// Thay YourFunction bằng tên hàm của bạn
+            ScheduleNextRun();
         }
         public MainWindow()
         {
@@ -99,25 +103,38 @@ namespace BarcodeCompareSystem
             //thanh add load file from path config.init
             timer = new DispatcherTimer();
             DateTime now = DateTime.Now;
-            DateTime scheduledTime = new DateTime(now.Year, now.Month, now.Day, 7, 0, 0);
+            DateTime scheduledTime = new DateTime(now.Year, now.Month, now.Day, 6, 30, 0);
+
 
             // Nếu thời điểm đã qua, thì lên lịch cho ngày hôm sau
             if (now > scheduledTime)
             {
                 scheduledTime = scheduledTime.AddDays(1);
             }
-
-            // Khởi tạo và cấu hình DispatcherTimer
             timer = new DispatcherTimer();
-            timer.Interval = scheduledTime - now; // Đặt khoảng thời gian là khoảng cách giữa thời điểm hiện tại và thời điểm lên lịch
             timer.Tick += Timer_Tick;
-
-            // Bắt đầu timer khi khởi tạo hoặc ở bất kỳ nơi nào bạn muốn
-            timer.Start();
+            ScheduleNextRun();
             LoadFilePath();
         }
 
-        //thanh add load tat ca cac file .btw tu config.ini
+        private void ScheduleNextRun()
+        {
+            DateTime now = DateTime.Now;
+            DateTime scheduledTime = new DateTime(now.Year, now.Month, now.Day, 6, 30, 0);
+
+            // Nếu thời điểm đã qua, thì lên lịch cho 6:30 sáng ngày hôm sau
+            if (now > scheduledTime)
+            {
+                scheduledTime = scheduledTime.AddDays(1);
+            }
+
+            // Tính khoảng thời gian chờ đến lần gọi tiếp theo
+            TimeSpan timeUntilNextRun = scheduledTime - now;
+
+            // Cập nhật khoảng thời gian cho timer và khởi động lại timer
+            timer.Interval = timeUntilNextRun;
+            timer.Start();
+        }
         public void LoadFilePath()
         {
             try
@@ -166,8 +183,6 @@ namespace BarcodeCompareSystem
                 //throw new DBException("");
             }
         }
-
-        //THANH ADD 25/12/2023 tìm kiếm theo Model
         private void Button_Open_Model(object sender, EventArgs e)
         {
 
@@ -225,8 +240,6 @@ namespace BarcodeCompareSystem
                 //App.DebugLog(error.StackTrace);
             }
         }
-
-        //thanh cmt sẽ đưa danh sách có được vào List File để add vào ListView
         private List<FileBox> ParserFileList(string[] files)
         {
             List<FileBox> fileInfos = new List<FileBox>();
@@ -240,9 +253,39 @@ namespace BarcodeCompareSystem
             }
             return fileInfos;
         }
+        public string OneYearTwoWeek(bool? check)
+        {
+            DateTime TimeNow = DateTime.Now;
+            DateTime sixThirtyAM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 6, 30, 0);
+            if (TimeNow < sixThirtyAM && check==true)
+            {
+                TimeNow = TimeNow.AddDays(-1);
+            }
+            int year = TimeNow.Year;
+            CultureInfo ci = CultureInfo.CurrentCulture;
+            Calendar calendar = ci.Calendar;
+            weekOfYear = calendar.GetWeekOfYear(TimeNow, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday).ToString();
+            int lastTwoDigitsOfYear = year % 10;
+            string result = lastTwoDigitsOfYear.ToString() + weekOfYear;
+            return result;
+        }
+        public string TwoYearTwoWeek(bool? check)
+        {
+            DateTime TimeNow = DateTime.Now;
+            DateTime sixThirtyAM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 6, 30, 0);
+            if (TimeNow < sixThirtyAM && check==true)
+            {
+                TimeNow = TimeNow.AddDays(-1);
+            }
+            int year = TimeNow.Year;
+            CultureInfo ci = CultureInfo.CurrentCulture;
+            Calendar calendar = ci.Calendar;
+            weekOfYear = calendar.GetWeekOfYear(TimeNow, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday).ToString();
+            int lastTwoDigitsOfYear = year % 100;
+            string result = lastTwoDigitsOfYear.ToString() + weekOfYear;
+            return result;
+        }
 
-
-        //Thanh add cmt click item listView
         public void ListViewItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
@@ -273,8 +316,9 @@ namespace BarcodeCompareSystem
         }
         public string formatDate4serial(DateTime dateRaw)
         {
-            DateTime dateTime = dateRaw;
-            if (dateTime.Hour < 7 && isBCalled == false)
+            DateTime dateTime = DateTime.Now;
+            DateTime sixThirtyAM = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 6, 30, 0);
+            if (dateTime < sixThirtyAM)
             {
                 dateTime = dateTime.AddDays(-1);
             }
@@ -326,6 +370,79 @@ namespace BarcodeCompareSystem
             }
             return result;
         }
+        public string FormatDate4serialInventory(DateTime dateTime)
+        {
+            int year = dateTime.Year;
+            int month = dateTime.Month;
+            int day = dateTime.Day;
+
+
+            string lastDigitOfYear = (year % 10).ToString();
+
+            string monthCode;
+            if (month >= 1 && month <= 9)
+            {
+                monthCode = month.ToString();
+            }
+            else if (month == 10)
+            {
+                monthCode = "A";
+            }
+            else if (month == 11)
+            {
+                monthCode = "B";
+            }
+            else if (month == 12)
+            {
+                monthCode = "C";
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("month", "Tháng không hợp lệ.");
+            }
+
+            char lastDigitOfYearChar = lastDigitOfYear[lastDigitOfYear.Length - 1];
+            char monthCodeChar = monthCode[0];
+
+            char[] dayCodes = "ABCDEFGHIJKLMNOPQRSTUV".ToCharArray();
+
+            string result;
+            char dayCode;
+            if (day >= 10)
+            {
+                dayCode = dayCodes[day - 10];
+                result = lastDigitOfYearChar.ToString() + monthCodeChar.ToString() + dayCode.ToString();
+            }
+            else
+            {
+                result = lastDigitOfYearChar.ToString() + monthCodeChar.ToString() + day.ToString();
+            }
+            return result;
+        }
+        public string formatDate2YMD()
+        {
+            DateTime dateTime = DateTime.Now;
+            DateTime sixThirtyAM = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 6, 30, 0);
+            if (dateTime < sixThirtyAM)
+            {
+                dateTime = dateTime.AddDays(-1);
+            }
+            string Year = dateTime.Year.ToString().Substring(2); // Lấy hai ký tự cuối của năm
+            string Month = dateTime.Month.ToString("D2"); // Đảm bảo tháng có hai ký tự
+            string Day = dateTime.Day.ToString("D2"); // Đảm bảo ngày có hai ký tự
+            string formattedDate = $"{Year}{Month}{Day}"; // Định dạng lại chuỗi
+            return formattedDate;
+        }
+        public string formatDate2YMDInventory()
+        {
+            DateTime dateTime = DateTime.Now;
+            string Year = dateTime.Year.ToString().Substring(2); // Lấy hai ký tự cuối của năm
+            string Month = dateTime.Month.ToString("D2"); // Đảm bảo tháng có hai ký tự
+            string Day = dateTime.Day.ToString("D2"); // Đảm bảo ngày có hai ký tự
+            string formattedDate = $"{Year}{Month}{Day}"; // Định dạng lại chuỗi
+            return formattedDate;
+        }
+
         public string formatDateToRePrint(string date)
         {
             if (DateTime.TryParseExact(date, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
@@ -365,11 +482,11 @@ namespace BarcodeCompareSystem
                 return "Invalid Date";
             }
         }
-
         public string formatDateNow()
         {
             DateTime TimeNow = DateTime.Now;
-            if (TimeNow.Hour < ConfigFile.start1)
+            DateTime sixThirtyAM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 6, 30, 0);
+            if (TimeNow < sixThirtyAM)
             {
                 TimeNow = TimeNow.AddDays(-1);
             }
@@ -459,7 +576,9 @@ namespace BarcodeCompareSystem
                 checkNumberSerialConfig = this._btwData.FileName.Substring(0, this._btwData.FileName.Length - 4);
 
                 DateTime TimeNow = DateTime.Now;
-                shift_cd = (TimeNow.Hour < 7 || TimeNow.Hour >= 19) ? "CA3" : "CA1";
+                DateTime sixThirtyAM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 6, 30, 0);
+                DateTime seventeenThirtyPM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 18, 30, 0);
+                shift_cd = (TimeNow < sixThirtyAM || TimeNow > seventeenThirtyPM) ? "CA3" : "CA1";
                 isBCalled = shift_cd == "CA3" ? false : true;
                 this._btwData.Path = this._basePath;
                 int a = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length;
@@ -468,8 +587,6 @@ namespace BarcodeCompareSystem
                 List<Barcode> barcodesIni = ConfigFile.GetFields(this._btwData.FileName, ModelYear2NumberArray, dayYearPart);
                 BarcodeField barcodeFields;
                 string dayYearPartScreen = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateNow() + " | " + shift_cd : formatDate4serial(DateTime.Now) + " | " + shift_cd;
-
-
                 foreach (Barcode barcode in barcodesIni)
                 {
                     barcodeFields = new BarcodeField();
@@ -491,7 +608,16 @@ namespace BarcodeCompareSystem
                             string value = this._bartenderEngine.ReadValue(fieldName);
                             field.Name = fieldName;
                             field.BtwValue = fieldName == "txt_Datecode" ? dayYearPartScreen : value;
-
+                            //field.BtwValue = fieldName == "txt_Datecode4Number" ? TwoYearTwoWeek() : value;
+                            //field.BtwValue = fieldName == "txt_Datecode3Number" ? TwoYearTwoWeek() : value;
+                            if (fieldName == "txt_Datecode3Number")
+                            {
+                                field.BtwValue = OneYearTwoWeek(true);
+                            }
+                            if (fieldName == "txt_Datecode4Number")
+                            {
+                                field.BtwValue = TwoYearTwoWeek(true);
+                            }
                             if (fieldName == "txt_GoogleNumber")
                             {
                                 string readGoogleNumber = this._bartenderEngine.ReadValue(fieldName);
@@ -520,7 +646,6 @@ namespace BarcodeCompareSystem
                 App.DebugLog(e.StackTrace);
             }
         }
-        //UI image và allow edit, auto increase
         private void RenderUIUsingBtwData()
         {
             this.Dispatcher.Invoke(() =>
@@ -600,8 +725,6 @@ namespace BarcodeCompareSystem
                 this.lstLabelBrowser.IsEnabled = true;
             });
         }
-
-        //thanh cmt button in lai
         private void Button_Re_Print_Click(object sender, RoutedEventArgs e)
         {
             LoginForm login = new LoginForm();
@@ -626,8 +749,6 @@ namespace BarcodeCompareSystem
                 }
             }
         }
-
-
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             if (this._bartenderEngine != null)
@@ -635,6 +756,7 @@ namespace BarcodeCompareSystem
                 this._bartenderEngine.Dispose();
             }
         }
+
         private string CV60E(string currentNumber, int labelCount)
         {
             char[] hangChucNghin = serial_sequence.Trim().ToCharArray();
@@ -683,7 +805,6 @@ namespace BarcodeCompareSystem
             }
             return "0";
         }
-
         private string V12E(string currentNumber, int labelCount)
         {
             char[] hangTram = serial_sequence.Trim().ToCharArray();
@@ -723,8 +844,6 @@ namespace BarcodeCompareSystem
             }
             return "0";
         }
-
-
         private string V80E(string currentNumber, int labelCount)
         {
             char[] hangNghin = serial_sequence.Trim().ToCharArray();
@@ -772,25 +891,12 @@ namespace BarcodeCompareSystem
             return "0";
         }
 
-
-        public string dayYearPart;
-        public string shift_cd;
-        public string GoogleNumber;
-        //thanh add cmt chuc nang IN (false), In lại (true)
         public void Print()
         {
-            //string configFilePath = "config.txt";
-
-            //// Đọc nội dung của file
-            //string[] lines = File.ReadAllLines(configFilePath);
-
-            //// Tìm dòng chứa mảng
-            //string arrayLine = lines.FirstOrDefault(line => line.StartsWith("MyArray"));
             if (this._basePath != null)
             {
                 try
                 {
-                    //thanh kiem tra thong tin so luong nhan co phai la interger
                     try
                     {
                         int numberLabelInt = int.Parse(CopiesOfLabel.Text);
@@ -823,26 +929,54 @@ namespace BarcodeCompareSystem
 
                         if (this.ComboBoxPrintersList.Text != "" && this.ComboBoxPrintersList.Text != null)
                         {
-                            //flag du lieu da ton tai hay chua
                             bool flagUpdate = false;
-
-                            //thanh lay so serial tu M_BarTender
                             DBAgent dbBoxNumber = DBAgent.Instance;
-
-                            //a = txt_Production.Text;
+                            DataTable dtBoxNumber = new DataTable();
                             isBCalled = false;
-                            dayYearPart = txt_Serial.Text.Length == 5 ? formatDateNow() : formatDate4serial(DateTime.Now);
+                            DateTime TimeNow = DateTime.Today;
+                            int year = TimeNow.Year;
+                            CultureInfo ci = CultureInfo.CurrentCulture;
+                            Calendar calendar = ci.Calendar;
+                            DateTime sixThirtyAM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 6, 30, 0);
+                            if (TimeNow < sixThirtyAM)
+                            {
+                                TimeNow = TimeNow.AddDays(-1);
+                            }
+                            weekOfYear = calendar.GetWeekOfYear(TimeNow, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday).ToString();
+                            int lastTwoDigitsOfYear = year % 100;
+                            int lastOneDigitsOfYear = year % 100;
+                            checkFileName = Path.GetFileName(this._basePath);
 
-                            DataTable dtBoxNumber = dbBoxNumber.GetData(
-                                "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
+                            //dayYearPart = txt_Serial.Text.Length == 5 ? formatDateNow() : formatDate4serial(DateTime.Now);
+                            dayYearPart = txt_Serial?.Text?.Length == 5 ? formatDateNow() : formatDate4serial(DateTime.Now);
+
+                            if (checkFileName == "V40W12BS2P5-07A021 NCVH THUNG(2).btw")
+                            {
+                                txt_Datecode4Number = lastTwoDigitsOfYear + weekOfYear;
+                                txt_Datecode3Number = lastOneDigitsOfYear + weekOfYear;
+
+                                dtBoxNumber = dbBoxNumber.GetData(
+                                "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATEPART(WEEK, CREATE_DATE)= @weekOfYear and FLAG_REPRINT = @flag_reprint",
                                 new Dictionary<string, object> {
                                     { "@file_name", Path.GetFileName(this._basePath) },
                                     { "@lot", txtBoxLot.Text },
-                                    {"@date",dayYearPart },
+                                    {"@weekOfYear",weekOfYear },
                                     { "@flag_reprint", '0' },
                                 }
                              );
-
+                            }
+                            else
+                            {
+                                dtBoxNumber = dbBoxNumber.GetData(
+                                "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @dayYearPart and FLAG_REPRINT = @flag_reprint",
+                                new Dictionary<string, object> {
+                                    { "@file_name", Path.GetFileName(this._basePath) },
+                                    { "@lot", txtBoxLot.Text },
+                                    {"@dayYearPart",dayYearPart },
+                                    { "@flag_reprint", '0' },
+                                }
+                             );
+                            }
                             if (dtBoxNumber != null && dtBoxNumber.Rows.Count > 0)
                             {
                                 //xu lý txtSerial tang gia tri 1 don vi
@@ -883,17 +1017,10 @@ namespace BarcodeCompareSystem
                                         if (field.Name.Contains("txt_Lot"))
                                         {
                                             txtLot = txtBox.Text;
+
                                             field.BtwValue = txtLot;
                                             this._bartenderEngine.SetValue(field.Name, txtLot);
-                                        }
 
-                                        //thanh add txtDatecode
-                                        if (field.Name.Contains("txt_Datecode"))
-                                        {
-                                            txtDatecode = txtBox.Text;
-                                            field.BtwValue = txtDatecode;
-                                            //field.BtwValue = dateRessult;
-                                            this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                         }
                                     }
                                     //gia tri serial tu dong tang
@@ -914,19 +1041,36 @@ namespace BarcodeCompareSystem
                                             field.BtwValue = txtSerialStartUpdate;
                                             this._bartenderEngine.SetValue(field.Name, txtSerialStartUpdate);
                                         }
-                                        if (field.Name.Contains("txt_Datecode"))
+
+                                        if (field.Name == "txt_Datecode3Number")
+                                        {
+                                            txtDatecode = txt_Datecode3Number;
+                                            field.BtwValue = OneYearTwoWeek(true);
+                                            this._bartenderEngine.SetValue(field.Name, OneYearTwoWeek(true));
+                                        }
+                                        if (field.Name == "txt_Datecode4Number")
+                                        {
+                                            txtDatecode = txt_Datecode4Number;
+                                            field.BtwValue = TwoYearTwoWeek(true);
+                                            this._bartenderEngine.SetValue(field.Name, TwoYearTwoWeek(true));
+                                        }
+                                        if (field.Name == "txt_Datecode")
                                         {
                                             txtDatecode = dayYearPart;
+                                            if (checkFileName == "V40W12BS2P5-07A021 NCVH THUNG(2).btw")
+                                            {
+                                                txtDatecode = formatDate2YMD();
+                                            }
                                             field.BtwValue = txtDatecode;
                                             this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                         }
+
                                     }
                                 }
                                 flagUpdate = true;
                             }
                             else
                             {
-                                //thanh lay so serial tu M_BarTender
                                 DBAgent dbserialSample = DBAgent.Instance;
                                 DataTable dtserialSample = dbserialSample.GetData(
                                     "Select TOP(1) * from M_BARTENDER where FILENAME = @file_name",
@@ -950,16 +1094,7 @@ namespace BarcodeCompareSystem
                                                 txtLot = txtBox.Text;
                                                 field.BtwValue = txtLot;
                                                 this._bartenderEngine.SetValue(field.Name, txtLot);
-                                            }
 
-                                            //thanh add txtDatecode
-                                            if (field.Name.Contains("txt_Datecode"))
-                                            {
-                                                txtDatecode = txtBox.Text;
-                                                field.BtwValue = txtDatecode;
-                                                //field.BtwValue = dateRessult;
-
-                                                this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                             }
                                         }
                                         //gia tri serial tu dong tang
@@ -974,17 +1109,31 @@ namespace BarcodeCompareSystem
                                                 field.BtwValue = txtProduct;
                                                 this._bartenderEngine.SetValue(field.Name, txtProduct);
                                             }
-                                            if (field.Name.Contains("txt_Datecode"))
+                                            if (field.Name == "txt_Datecode3Number")
+                                            {
+                                                txtDatecode = txt_Datecode3Number;
+                                                field.BtwValue = OneYearTwoWeek(true);
+                                                this._bartenderEngine.SetValue(field.Name, OneYearTwoWeek(true));
+                                            }
+                                            if (field.Name == "txt_Datecode4Number")
+                                            {
+                                                txtDatecode = txt_Datecode4Number;
+                                                field.BtwValue = TwoYearTwoWeek(true);
+                                                this._bartenderEngine.SetValue(field.Name, TwoYearTwoWeek(true));
+                                            }
+                                            if (field.Name == "txt_Datecode")
                                             {
                                                 txtDatecode = dayYearPart;
+                                                if (checkFileName == "V40W12BS2P5-07A021 NCVH THUNG(2).btw")
+                                                {
+                                                    txtDatecode = formatDate2YMD();
+                                                }
                                                 field.BtwValue = txtDatecode;
-                                                //field.BtwValue = dateRessult;
                                                 this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                             }
                                             //thanh add txtSerial
                                             if (field.Name.Contains("txt_Serial"))
                                             {
-
                                                 txtSerialStartInsert = dtserialSample.Rows[0]["SERIAL_SAMPLE"].ToString().Trim();
                                                 if (txtSerialStartInsert.Count() == 5)
                                                     //txtSerialInsert = txtBox.Text;
@@ -1015,15 +1164,20 @@ namespace BarcodeCompareSystem
                                 {
                                     //cap nhat du lieu
                                     //int box_number = int.Parse(CopiesOfLabel.Text) - 1;
-                                    DBAgent db = DBAgent.Instance;
-                                    string query = "UPDATE M_BARTENDER_PRINT SET SERIAL_NUMBER = @box, UPDATE_DATE = @update_date, UPDATE_BY = @update_by WHERE FILE_NAME = @filename AND DATE_CODE = @lot_no AND FLAG_REPRINT = @flag_print";
 
+                                    DBAgent db = DBAgent.Instance;
+                                    string query = "UPDATE M_BARTENDER_PRINT SET SERIAL_NUMBER = @box, UPDATE_DATE = @update_date, UPDATE_BY = @update_by WHERE FILE_NAME = @filename AND DATE_CODE = @date_code AND FLAG_REPRINT = @flag_print";
+                                    if (checkFileName == "V40W12BS2P5-07A021 NCVH THUNG(2).btw")
+                                    {
+                                        query = "UPDATE M_BARTENDER_PRINT SET SERIAL_NUMBER = @box, UPDATE_DATE = @update_date, UPDATE_BY = @update_by WHERE FILE_NAME = @filename AND DATEPART(WEEK, CREATE_DATE)=@weekOfYear AND FLAG_REPRINT = @flag_print";
+                                    }
                                     Dictionary<string, object> parameters = new Dictionary<string, object> {
                                             { "@box", txtSerialUpdate },
                                             { "@update_date", DateTime.Now },
                                             { "@update_by", Department },
                                             { "@filename", Path.GetFileName(this._basePath) },
-                                            { "@lot_no", dayYearPart },
+                                            { "@weekOfYear", weekOfYear },
+                                            { "@date_code", dayYearPart },
                                             { "@flag_print", '0' },
                                         };
 
@@ -1063,10 +1217,12 @@ namespace BarcodeCompareSystem
                                     System.Windows.Forms.MessageBox.Show("Không thể thêm dữ liệu mới!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 }
                             }
-                            DBAgent db_ = DBAgent.Instance;
-                            int numberlabel = int.Parse(CopiesOfLabel.Text);
-                            string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL, STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
-                            Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
+                            if (checkFileName != "V40W12BS2P5-07A021 NCVH UKCA(3).btw")
+                            {
+                                DBAgent db_ = DBAgent.Instance;
+                                int numberlabel = int.Parse(CopiesOfLabel.Text);
+                                string query_bartender_history = "INSERT INTO M_BAR_HISTORY (FILE_NAME, DATE_CODE, LOT_NO, GOOGLE_NUMBER,STR_SERIAL,END_SERIAL,CREATE_DATE, CREATE_BY,NUMBER_LABEL, STATUS) VALUES (@filename, @date, @lot_no, @google_number,@str_serial, @end_serial,@create_date, @create_by,@number_label,@status)";
+                                Dictionary<string, object> parameters_bartender_history = new Dictionary<string, object> {
                                             { "@filename", Path.GetFileName(this._basePath) },
                                             { "@date", dayYearPart },
                                             { "@lot_no", txtLot },
@@ -1078,12 +1234,24 @@ namespace BarcodeCompareSystem
                                             { "@number_label", numberlabel },
                                             { "@status", "NORMAL-PRINT" },
                                         };
-                            db_.Execute(query_bartender_history, parameters_bartender_history);
+                                db_.Execute(query_bartender_history, parameters_bartender_history);
+                            }
+
 
                             //thanh add Lien ket voi BarTender de in
                             PrintJob printJob = new PrintJob();
                             printJob.Serializiers = int.Parse(CopiesOfLabel.Text);
+                            int check = int.Parse(CopiesOfLabel.Text);
                             printJob.CopiesOfLabel = 1;
+                            if (checkFileName == "V40W12BS2P5-07A021 NCVH UKCA(3).btw")
+                            {
+                                printJob.CopiesOfLabel = int.Parse(CopiesOfLabel.Text);
+                                printJob.Serializiers = 1;
+                            }
+                            else
+                            {
+                                printJob.CopiesOfLabel = 1;
+                            }
                             printJob.Path = this._basePath;
                             printJob.Printer = this.ComboBoxPrintersList.Text;
                             Seagull.BarTender.Print.Result result = this._bartenderEngine.Print(printJob);
@@ -1119,7 +1287,6 @@ namespace BarcodeCompareSystem
                 System.Windows.Forms.MessageBox.Show("Vui lòng chọn file!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-
         private void RePrint(string username)
         {
             RePrint rePrint = new RePrint();
@@ -1326,60 +1493,22 @@ namespace BarcodeCompareSystem
                 }
             }
         }
-
-        //thanh add kt co ton tai trong ke hoach san xuat
-        //private bool CheckProduction(string filename, string lotno)
-        //{
-        //    try
-        //    {
-        //        DBAgent dbProduct = DBAgent.Instance;
-        //        DataTable dtProduct = new DataTable();
-        //        DateTime checkTime = DateTime.Now;
-
-        //        string query = @"
-        //            SELECT A.PRODUCT_NO
-        //            FROM T_LOT_PRODUCT AS A
-        //            INNER JOIN M_BARTENDER AS B ON A.PRODUCT_NO = B.PRODUCT_NO
-        //            WHERE B.FILENAME = @filename AND A.LOT_NO = @lotno AND A.PRODUCT_STR_DT<=@checkTime AND A.PRODUCT_END_DT>=@checkTime";
-        //        Dictionary<string, object> parameters = new Dictionary<string, object> {
-        //            { "@filename", filename },
-        //            { "@lotno", lotno },
-        //            { "@checkTime", checkTime }
-        //        };
-
-
-        //        dtProduct = dbProduct.GetData(query, parameters);
-        //        if (dtProduct != null && dtProduct.Rows.Count > 0)
-        //        {
-        //            return true;
-        //        }
-        //        else
-        //        {
-        //            return false;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Windows.Forms.MessageBox.Show("Lỗi truy vấn dữ liệu sản xuất!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        //    }
-        //    return false;
-        //}
-
         private bool CheckProduction(string filename, string lotno)
         {
             try
             {
                 DBAgent dbProduct = DBAgent.Instance;
                 DataTable dtProduct = new DataTable();
-                DateTime checkTime = DateTime.Now;
+                DateTime TimeNow = DateTime.Now;
                 DateTime checkTimeProductEnd = DateTime.Now;
 
 
-                string formattedDate = checkTime.ToString("yyyyMMdd");
-                if (checkTime.Hour >= 0 && checkTime.Hour < 7)
+                string formattedDate = TimeNow.ToString("yyyyMMdd");
+                DateTime sixThirtyAM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 6, 30, 0);
+                if (TimeNow < sixThirtyAM)
                 {
-                    checkTime = checkTime.AddDays(-1);
-                    formattedDate = checkTime.ToString("yyyyMMdd");
+                    TimeNow = TimeNow.AddDays(-1);
+                    formattedDate = TimeNow.ToString("yyyyMMdd");
                 }
                 string query = @"
                     SELECT A.PRODUCT_NO
@@ -1393,7 +1522,7 @@ namespace BarcodeCompareSystem
                     { "@formattedDate", formattedDate }
                 };
                 dtProduct = dbProduct.GetData(query, parameters);
-                if (dtProduct != null && dtProduct.Rows.Count > 0)
+                if (dtProduct != null && dtProduct.Rows.Count > 0 || filename == "V40W12BS2P5-07A021 NCVH UKCA(3).btw")
                 {
                     return true;
                 }
@@ -1576,9 +1705,6 @@ namespace BarcodeCompareSystem
             this.LoadBtwData();
             this.RenderUIUsingBtwData();
         }
-
-        //thanh add Reload sau khi cap nhat du lieu
-
         private void Button_Reload(object sender, RoutedEventArgs e)
         {
             LoadFilePath();
@@ -1587,8 +1713,6 @@ namespace BarcodeCompareSystem
             this._bartenderEngine.CloseFormat(false);
             this.ClearStackPanel();
         }
-
-        //thanh add nut in thu
         private void Button_Sample_Print(object sender, RoutedEventArgs e)
         {
             if (this._basePath != null)
@@ -1676,7 +1800,6 @@ namespace BarcodeCompareSystem
                 }
             }
         }
-
         public string Result_FormatDate(string dateRePrint = null)
         {
             DBAgent dbBoxNumber = DBAgent.Instance;
@@ -1692,7 +1815,6 @@ namespace BarcodeCompareSystem
 
             return dayYearPart;
         }
-
         private void Button_Eventory_Print(object sender, RoutedEventArgs e)
         {
             PrintInventory PrintInventory = new PrintInventory();
@@ -1706,7 +1828,9 @@ namespace BarcodeCompareSystem
             int endTimeInventory = int.Parse(endTime);
 
             // Kiểm tra nếu thời gian hiện tại nằm trong khoảng từ 19h ngày hôm trước đến 7h ngày hôm sau
-            if (currentDateTime.Hour <= 2 || currentDateTime.Hour >= 7)
+            DateTime TimeNow = DateTime.Now;
+            DateTime sixThirtyAM = new DateTime(TimeNow.Year, TimeNow.Month, TimeNow.Day, 6, 30, 0);
+            if (TimeNow > sixThirtyAM)
             {
                 System.Windows.Forms.MessageBox.Show("Chưa đến thời gian cho phép in tồn!", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
@@ -1722,7 +1846,7 @@ namespace BarcodeCompareSystem
                                }
                             );
 
-            dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToInventory(DateTime.Now) : formatDate4serial(DateTime.Now);
+            dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToInventory(DateTime.Now) : FormatDate4serialInventory(DateTime.Now);
 
             DataTable dtBoxNumber = dbBoxNumber.GetData(
                                 "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",
@@ -1762,9 +1886,9 @@ namespace BarcodeCompareSystem
                     if (numberSerial != "")
                     {
                         int tong = int.Parse(numberSerial) + int.Parse(txtNumberLabel);
-                        if (tong > 1000)
+                        if (tong > 2000)
                         {
-                            System.Windows.Forms.MessageBox.Show($"Số lượng nhãn còn lại có thể in tồn là: {1000 - int.Parse(numberSerial)}! Vui lòng nhập lại", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            System.Windows.Forms.MessageBox.Show($"Số lượng nhãn còn lại có thể in tồn là: {2000 - int.Parse(numberSerial)}! Vui lòng nhập lại", "Comfirm", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             return;
                         }
 
@@ -1822,7 +1946,6 @@ namespace BarcodeCompareSystem
                                     // lay thong tin tren man hinh
                                     foreach (BarcodeField barcodeField in this._btwData.Barcodes)
                                     {
-                                        //cac gia tri co the chinh sua
                                         foreach (TemplateField field in barcodeField.Fields)
                                         {
                                             // Load current textbox value 
@@ -1834,9 +1957,6 @@ namespace BarcodeCompareSystem
                                                 field.BtwValue = txtLot;
                                                 this._bartenderEngine.SetValue(field.Name, txtLot);
                                             }
-
-                                            //thanh add txtDatecode
-
                                         }
                                         //gia tri serial tu dong tang
                                         foreach (TemplateField field in barcodeField.UncheckFields)
@@ -1847,7 +1967,6 @@ namespace BarcodeCompareSystem
                                             if (field.Name.Contains("txt_Serial"))
                                             {
                                                 txtSerial = startNumber.ToString();
-                                                field.BtwValue = "13";
                                                 this._bartenderEngine.SetValue(field.Name, txtSerial);
                                             }
                                             //thanh add txtProduct
@@ -1859,7 +1978,8 @@ namespace BarcodeCompareSystem
                                             }
                                             if (field.Name.Contains("txt_Datecode"))
                                             {
-                                                txtDatecode = dateCodePrintInventory;
+                                                //txtDatecode = dateCodePrintInventory;
+                                                txtDatecode = formatDate2YMDInventory();
                                                 field.BtwValue = dateCodePrintInventory;
                                                 this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                             }
@@ -1907,15 +2027,6 @@ namespace BarcodeCompareSystem
                                                     field.BtwValue = txtLot;
                                                     this._bartenderEngine.SetValue(field.Name, txtLot);
                                                 }
-
-                                                //thanh add txtDatecode
-                                                if (field.Name.Contains("txt_Datecode"))
-                                                {
-                                                    txtDatecode = txtBox.Text;
-                                                    field.BtwValue = txtDatecode;
-                                                    //field.BtwValue = dateRessult;
-                                                    this._bartenderEngine.SetValue(field.Name, txtDatecode);
-                                                }
                                             }
                                             //gia tri serial tu dong tang
                                             foreach (TemplateField field in barcodeField.UncheckFields)
@@ -1934,9 +2045,22 @@ namespace BarcodeCompareSystem
                                                     field.BtwValue = txtSerialStartUpdate;
                                                     this._bartenderEngine.SetValue(field.Name, txtSerialStartUpdate);
                                                 }
-                                                if (field.Name.Contains("txt_Datecode"))
+                                                if (field.Name == "txt_Datecode3Number")
+                                                {
+                                                    txtDatecode = txt_Datecode3Number;
+                                                    field.BtwValue = OneYearTwoWeek(false);
+                                                    this._bartenderEngine.SetValue(field.Name, OneYearTwoWeek(false));
+                                                }
+                                                if (field.Name == "txt_Datecode4Number")
+                                                {
+                                                    txtDatecode = txt_Datecode4Number;
+                                                    field.BtwValue = TwoYearTwoWeek(false);
+                                                    this._bartenderEngine.SetValue(field.Name, TwoYearTwoWeek(false));
+                                                }
+                                                if (field.Name == "txt_Datecode")
                                                 {
                                                     txtDatecode = dayYearPart;
+                                                    txtDatecode = formatDate2YMDInventory();
                                                     field.BtwValue = txtDatecode;
                                                     this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                                 }
@@ -1976,8 +2100,6 @@ namespace BarcodeCompareSystem
                                                     {
                                                         txtDatecode = txtBox.Text;
                                                         field.BtwValue = txtDatecode;
-                                                        //field.BtwValue = dateRessult;
-
                                                         this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                                     }
                                                 }
@@ -1993,11 +2115,23 @@ namespace BarcodeCompareSystem
                                                         field.BtwValue = txtProduct;
                                                         this._bartenderEngine.SetValue(field.Name, txtProduct);
                                                     }
-                                                    if (field.Name.Contains("txt_Datecode"))
+                                                    if (field.Name == "txt_Datecode3Number")
+                                                    {
+                                                        txtDatecode = txt_Datecode3Number;
+                                                        field.BtwValue = OneYearTwoWeek(false);
+                                                        this._bartenderEngine.SetValue(field.Name, OneYearTwoWeek(false));
+                                                    }
+                                                    if (field.Name == "txt_Datecode4Number")
+                                                    {
+                                                        txtDatecode = txt_Datecode4Number;
+                                                        field.BtwValue = TwoYearTwoWeek(false);
+                                                        this._bartenderEngine.SetValue(field.Name, TwoYearTwoWeek(false));
+                                                    }
+                                                    if (field.Name == "txt_Datecode")
                                                     {
                                                         txtDatecode = dayYearPart;
+                                                        txtDatecode = formatDate2YMDInventory();
                                                         field.BtwValue = txtDatecode;
-                                                        //field.BtwValue = dateRessult;
                                                         this._bartenderEngine.SetValue(field.Name, txtDatecode);
                                                     }
                                                     //thanh add txtSerial
@@ -2019,8 +2153,6 @@ namespace BarcodeCompareSystem
                                                             txtSerialInsert = V80E(txtSerialStartInsert, int.Parse(txtNumberLabel) - 1);
 
                                                         }
-                                                        //txtSerialInsert = GetNextSerial(txtSerialStartInsert, int.Parse(CopiesOfLabel.Text) - 1);
-
                                                         field.BtwValue = txtSerialStartInsert;
                                                         this._bartenderEngine.SetValue(field.Name, txtSerialStartInsert);
                                                     }
@@ -2153,8 +2285,6 @@ namespace BarcodeCompareSystem
             }
 
         }
-
-
         private string CheckLotNo(string LotNo, string ProductNo)
         {
             try
@@ -2170,8 +2300,6 @@ namespace BarcodeCompareSystem
                 return null;
             }
         }
-
-
         private void Button_Inventory_Holiday_Click(object sender, RoutedEventArgs e)
         {
             Check_LotNo check_LotNo = new Check_LotNo();
@@ -2213,11 +2341,11 @@ namespace BarcodeCompareSystem
                     DateTime parsedDate;
                     DateTime.TryParseExact(getProduct_Day, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate);
                     DateTime checkDateInventory = DateTime.Now.AddDays(1);
-                    //if (parsedDate <= checkDateInventory)
-                    //{
-                    //    System.Windows.Forms.MessageBox.Show("LotNo nằm ngoài thời gian in tồn!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    //    return;
-                    //}
+                    if (parsedDate <= checkDateInventory)
+                    {
+                        System.Windows.Forms.MessageBox.Show("LotNo nằm ngoài thời gian in tồn!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
                     dayYearPart = dtBoxNumberStart.Rows[0]["SERIAL_SAMPLE"].ToString().Trim().Length == 5 ? formatDateToInventory(parsedDate) : formatDate4serial(parsedDate);
                     DataTable dtBoxNumber = dbBoxNumber.GetData(
                                         "Select TOP(1) * from M_BARTENDER_PRINT where FILE_NAME = @file_name and DATE_CODE = @date and FLAG_REPRINT = @flag_reprint",

@@ -14,31 +14,63 @@ namespace BarcodeCompareSystem.Util
     class ConfigFile
     {
         public static int start1;
-        public static List<Barcode> GetFields(string fileName,string [] ModelYear2NumberArray,string dayYearPart)
+        public static List<Barcode> GetFields(string fileName, string[] ModelYear2NumberArray, string dayYearPart)
         {
             List<Barcode> sections = new List<Barcode>();
             try
             {
                 string fileNameCheck = fileName.Substring(0, fileName.Length - 4); ;
                 //sql
+
                 DBAgent db = DBAgent.Instance;
                 DataTable dt = new DataTable();
                 DataTable dt1 = new DataTable();
-                string query = @"
+                string query;
+                if (fileName == "V40W12BS2P5-07A021 NCVH THUNG(2).btw")
+                {
+                    DateTime today = DateTime.Now;
+                    DateTime sixThirtyAM = new DateTime(today.Year, today.Month, today.Day, 6, 30, 0);
+                    if (today < sixThirtyAM)
+                    {
+                        today = today.AddDays(-1);
+                    }
+                    CultureInfo ci = CultureInfo.CurrentCulture;
+                    Calendar calendar = ci.Calendar;
+                    dayYearPart = calendar.GetWeekOfYear(today, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday).ToString();
+                    query = @"
+                            SELECT *
+                            FROM M_BARTENDER AS A
+                            LEFT JOIN M_BARTENDER_PRINT AS B ON A.FILENAME = B.FILE_NAME and DATEPART(WEEK, B.CREATE_DATE) = @result
+                            WHERE A.FILENAME = @nme";
+                }
+                else if(fileName== "V40W12BS2P5-07A021 NCVH WH IN (THỂ HIỆN NƠI XUẤT HÀNG)(4).btw")
+                {
+                    DateTime today = DateTime.Today;
+                    dayYearPart = today.Month.ToString();
+                    query = @"
+                            SELECT *
+                            FROM M_BARTENDER AS A
+                            LEFT JOIN M_BARTENDER_PRINT AS B ON A.FILENAME = B.FILE_NAME and DATEPART(MONTH, B.CREATE_DATE) = @result
+                            WHERE A.FILENAME = @nme";
+                }
+                else
+                {
+                    query = @"
                     SELECT *
                     FROM M_BARTENDER AS A
                     LEFT JOIN M_BARTENDER_PRINT AS B ON A.FILENAME = B.FILE_NAME and B.DATE_CODE = @result
                     WHERE A.FILENAME = @nme";
+                }
 
                 Dictionary<string, object> parameters = new Dictionary<string, object> {
                     { "@nme", fileName },
-                    { "@result", dayYearPart },
-                };  
+                    { "@result", dayYearPart }
+                };
                 dt = db.GetData(query, parameters);
                 if (dt != null && dt.Rows.Count > 0)
                 {
                     string fields = dt.Rows[0]["ALLOW_EDIT"].ToString().Trim();
-                    string uncheckfields = dt.Rows[0]["AUTO_INCREASE"].ToString().Trim();
+                        string uncheckfields = dt.Rows[0]["AUTO_INCREASE"].ToString().Trim();
                     string numberSerial = dt.Rows[0]["SERIAL_NUMBER"].ToString().Trim();
                     string serial_sequence = dt.Rows[0]["SERIAL_SEQUENCE"].ToString().Trim();
                     string product_id = dt.Rows[0]["PRODUCT_NO"].ToString().Trim();
@@ -47,7 +79,7 @@ namespace BarcodeCompareSystem.Util
                         FROM T_LOT_PRODUCT 
                         JOIN M_SHIFT ON T_LOT_PRODUCT.DIVISION_CD = M_SHIFT.DIVISION_CD AND T_LOT_PRODUCT.PROCESS_CD = M_SHIFT.PROCESS_CD
                         WHERE T_LOT_PRODUCT.PRODUCT_NO = @product_id AND M_SHIFT.SHIFT_CD = @SHIFT_CD";
-                                        Dictionary<string, object> parameters1 = new Dictionary<string, object> {
+                    Dictionary<string, object> parameters1 = new Dictionary<string, object> {
                         { "@product_id", product_id },
                          { "@SHIFT_CD", "CA1" }
 

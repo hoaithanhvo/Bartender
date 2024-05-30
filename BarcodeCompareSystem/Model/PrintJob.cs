@@ -10,7 +10,7 @@ namespace BarcodeCompareSystem.Model
     class PrintJob
     {
         public BtwData btwData = new BtwData();
-        public int CopiesOfLabel = 1;
+        public int CopiesOfLabel { get; set; } = 1 ;
         public int Serializiers = 1;
         public string Printer;
         public string Path; 

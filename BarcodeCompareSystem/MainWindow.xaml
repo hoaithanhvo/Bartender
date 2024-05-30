@@ -135,14 +135,14 @@
         </Grid>
         <Grid Background="#fafafa" Grid.Column="1" Grid.Row="3">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="8*"/>
+                <ColumnDefinition Width="49*"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            <Button FontSize="15" BorderBrush="Black" Click="Button_Sample_Print" Content="Print Sample" HorizontalAlignment="Left"  Width="100" Height="30" Margin="423,17,0,18"  OpacityMask="Black" />
-            <Button FontSize="15" BorderBrush="Black" Click="Button_Re_Print_Click" Content="Re-Print" HorizontalAlignment="Left"  Width="100" Height="30" Margin="546,17,0,18"  OpacityMask="Black" />
-            <Button FontSize="15"  BorderBrush="Black" Content="Print" Click="Button_Print_Click" HorizontalAlignment="Left"  Width="100" Height="30" Margin="670,18,0,17" OpacityMask="Black" />
-            <Button FontSize="15" BorderBrush="Black" Click="Button_Eventory_Print" Content="Print Inventory" HorizontalAlignment="Left"  Width="100" Height="30" Margin="290,18,0,17"  OpacityMask="Black" />
-            <Button FontSize="15" BorderBrush="Black" Click="Button_Inventory_Holiday_Click" Content="Print Inventory Holiday" HorizontalAlignment="Left"  Width="169" Height="30" Margin="95,18,0,17"  OpacityMask="Black" />
+            <Button FontSize="15" BorderBrush="Black" Click="Button_Sample_Print" Content="Print Sample" HorizontalAlignment="Left"  Width="100" Margin="617,18,0,17"  OpacityMask="Black" Visibility="Hidden"/>
+            <Button FontSize="15" BorderBrush="Black" Click="Button_Re_Print_Click" Content="Re-Print" HorizontalAlignment="Left"  Width="100" Margin="740,18,0,17"  OpacityMask="Black" Visibility="Hidden" />
+            <Button FontSize="15"  BorderBrush="Black" Content="Print" Click="Button_Print_Click" HorizontalAlignment="Left"  Width="100" Margin="153,18,0,17" OpacityMask="Black" />
+            <Button FontSize="15" BorderBrush="Black" Click="Button_Eventory_Print" Content="Print Inventory" HorizontalAlignment="Left"  Width="139" Margin="280,18,0,17"  OpacityMask="Black"  />
+            <Button FontSize="15" BorderBrush="Black" Click="Button_Inventory_Holiday_Click" Content="Print Inventory Holiday" HorizontalAlignment="Left"  Width="169" Margin="419,18,0,17"  OpacityMask="Black" Visibility="Hidden" />
         </Grid>
 
     </Grid>
