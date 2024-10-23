@@ -43,6 +43,7 @@ namespace BarcodeCompareSystem
             this.Close();
             //dcm commit 10
             //dcm commit 11
+            //dcm commit 12
 
             this.CenterWindowOnScreen();
         }
