@@ -42,7 +42,7 @@ namespace BarcodeCompareSystem
             this.DialogResult = false;
             this.Close();
             //mold commit 2
-            this.CenterWindowOnScreen();
+            this.MemberwiseClone();
         }
     }
 }
