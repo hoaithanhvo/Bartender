@@ -41,6 +41,7 @@ namespace BarcodeCompareSystem
         private void btnCancel_Click(object sender, RoutedEventArgs e) {
             this.DialogResult = false;
             this.Close();
+            //smt commit3 
         }
     }
 }
