@@ -42,6 +42,8 @@ namespace BarcodeCompareSystem
             this.DialogResult = false;
             this.Close();
             //dcm commit 10
+            //dcm commit 11
+
             this.CenterWindowOnScreen();
         }
     }
