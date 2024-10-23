@@ -43,6 +43,8 @@ namespace BarcodeCompareSystem
             //this.Close();
             //thanh commit
 
+            //thanh cmt dcm 2
+
         }
     }
 }
